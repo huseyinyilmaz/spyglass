@@ -6,8 +6,7 @@ import Data.Text(Text)
 
 -- DB = TVar
 commitCollection :: Text -> [CollectionItem] -> AppM (Server CommitCollectionAPI)
-commitCollection name _ =
-  return $ return $ (CollectionInfo "test")
+commitCollection collectionName _ = return $ return $ return $ return (CollectionInfo collectionName)
 
 getCollections :: Server GetCollectionsAPI
 getCollections = return [CollectionInfo "test"]

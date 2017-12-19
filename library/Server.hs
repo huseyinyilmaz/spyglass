@@ -31,7 +31,8 @@ api :: Proxy API
 api = Proxy
 
 server :: AppM Server API
-server = commitCollection :<|> getCollections
+server =
+  commitCollection :<|> getCollections
 
 initialState :: IO State
 initialState = do
