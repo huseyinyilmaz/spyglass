@@ -1,14 +1,54 @@
 # This YAML file describes your package. Stack will automatically generate a
 # Cabal file when you run `stack build`. See the hpack website for help with
 # this file: <https://github.com/sol/hpack>.
+name: spyglass
+version: '0.0.0'
+github: "githubuser/spyglass"
+license: MIT
+author: "Author name here"
+maintainer: "Author name here"
+synopsis: A new Haskeleton package.
+description: spyglass is a new Haskeleton package.
+# category: Other
+
+extra-source-files:
+- CHANGELOG.md
+- LICENSE.md
+- package.yaml
+- README.md
+- stack.yaml
+
+ghc-options: -Wall
+
 default-extensions:
   - OverloadedStrings
-  - DataKinds
-  - TemplateHaskell
-  - TypeOperators
+
+library:
+  dependencies:
+  - base
+  - Spock
+  - mtl
+  - text
+  - containers
+  - stm
+  source-dirs: library
+
+executables:
+  spyglass:
+    source-dirs: executable
+    main: Main.hs
+    dependencies:
+    - base
+    - spyglass
+    ghc-options:
+    - -rtsopts
+    - -threaded
+    - -with-rtsopts=-N
 
 benchmarks:
   spyglass-benchmarks:
+    source-dirs: benchmark
+    main: Main.hs
     dependencies:
     - base
     - spyglass
@@ -17,49 +57,11 @@ benchmarks:
     - -rtsopts
     - -threaded
     - -with-rtsopts=-N
-    main: Main.hs
-    source-dirs: benchmark
-category: Other
-description: spyglass is a new Haskeleton package.
-executables:
-  spyglass:
-    dependencies:
-    - base
-    - spyglass
-    ghc-options:
-    - -rtsopts
-    - -threaded
-    - -with-rtsopts=-N
-    main: Main.hs
-    source-dirs: executable
-extra-source-files:
-- CHANGELOG.md
-- LICENSE.md
-- package.yaml
-- README.rst
-- stack.yaml
-ghc-options: -Wall
-github: githubuser/spyglass
-library:
-  dependencies:
-  - base
-  - aeson
-  - servant-server
-  - wai
-  - wai-extra
-  - warp
-  - text
-  - containers
-  - transformers
-  - mtl
-  - stm
-  source-dirs: library
-license: MIT
-maintainer: Author name here
-name: spyglass
-synopsis: A new Haskeleton package.
+
 tests:
   spyglass-test-suite:
+    source-dirs: test-suite
+    main: Main.hs
     dependencies:
     - base
     - spyglass
@@ -69,6 +71,3 @@ tests:
     - -rtsopts
     - -threaded
     - -with-rtsopts=-N
-    main: Main.hs
-    source-dirs: test-suite
-version: '0.0.0'
