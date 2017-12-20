@@ -13,5 +13,5 @@ data AppSession = EmptySession
 
 data AppState = AppState (STM.TVar (Map.Map Text.Text Text.Text))
 
-type AppM = SpockM () AppSession AppState ()
+type AppM a = SpockM () AppSession AppState a
 type ActionCtx ctx a = SpockActionCtx ctx () AppSession AppState a
