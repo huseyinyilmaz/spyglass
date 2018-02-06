@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -7,12 +8,11 @@ import Web.Spock
 import Types
 import Control.Monad.IO.Class (MonadIO)
 import Data.Monoid
+import Control.Monad.Trans
 
 -- ActionCtxT ctx (WebStateM conn sess st) () -> SpockCtxM ctx conn sess st ()
--- getCollection :: ActionCtxT ctx AppM ()
-
--- getCollection :: ActionCtxT ctx m0 a
-getCollection :: MonadIO m => Text.Text -> ActionCtxT ctx m a
-getCollection a = do
+--getCollection :: Text.Text -> SpockCtxM ctx conn sess st ()
+getCollection :: (SpockState (ActionCtxT ctx m) ~ AppState, MonadIO m, HasSpock (ActionCtxT ctx m)) => Text.Text -> ActionCtxT ctx m b
+getCollection name = do
   (AppState ref) <- getState
-  text ("Hello " <> a <> ", you are visitor number 0 ")
+  text ("Hello " <> name <> ", you are visitor number 0 ")
