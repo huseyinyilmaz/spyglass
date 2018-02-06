@@ -2,7 +2,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
-module Views(getCollection) where
+module Views(getCollection,
+             postCollection) where
 import qualified Data.Text as Text
 import Web.Spock
 import Types
