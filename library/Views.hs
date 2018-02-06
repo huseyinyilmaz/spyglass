@@ -10,9 +10,13 @@ import Control.Monad.IO.Class (MonadIO)
 import Data.Monoid
 import Control.Monad.Trans
 
--- ActionCtxT ctx (WebStateM conn sess st) () -> SpockCtxM ctx conn sess st ()
---getCollection :: Text.Text -> SpockCtxM ctx conn sess st ()
 getCollection :: (SpockState (ActionCtxT ctx m) ~ AppState, MonadIO m, HasSpock (ActionCtxT ctx m)) => Text.Text -> ActionCtxT ctx m b
 getCollection name = do
   (AppState ref) <- getState
-  text ("Hello " <> name <> ", you are visitor number 0 ")
+  text ("Hello " <> name <> ", you are visitor number " <> Text.pack (show 0))
+
+
+postCollection :: (SpockState (ActionCtxT ctx m) ~ AppState, MonadIO m, HasSpock (ActionCtxT ctx m)) => Text.Text -> ActionCtxT ctx m b
+postCollection name = do
+  (AppState ref) <- getState
+  text ("Hello " <> name <> ", you are visitor number " <> Text.pack (show 0))

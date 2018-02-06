@@ -23,3 +23,4 @@ app =
     do get root $
            text "Hello World!"
        get ("api" <//> "v1" <//> var) Views.getCollection
+       post ("api" <//> "v1" <//> var) Views.postCollection
