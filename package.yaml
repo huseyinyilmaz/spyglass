@@ -3,12 +3,12 @@
 # this file: <https://github.com/sol/hpack>.
 name: spyglass
 version: '0.0.0'
-github: "githubuser/spyglass"
+github: "huseyinyilmaz/spyglass"
 license: MIT
-author: "Author name here"
-maintainer: "Author name here"
-synopsis: A new Haskeleton package.
-description: spyglass is a new Haskeleton package.
+author: "Huseyin Yilmaz"
+maintainer: "Huseyin Yilmaz"
+synopsis: In memmory autocomplete engine with rest interface.
+description: spyglass is an in-memory autocomplete engine that serves its data using a REST interface.
 # category: Other
 
 extra-source-files:
@@ -22,6 +22,9 @@ ghc-options: -Wall
 
 default-extensions:
   - OverloadedStrings
+  - DeriveGeneric
+  - FlexibleContexts
+  - GADTs
 
 library:
   dependencies:
@@ -32,7 +35,6 @@ library:
   - containers
   - stm
   - bytestring-trie
-
 source-dirs: library
 
 executables:

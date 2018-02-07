@@ -4,9 +4,7 @@ import Web.Spock
 import Web.Spock.Config
 
 --import Control.Monad.Trans
-import Data.Monoid
 import qualified Control.Concurrent.STM as STM
-import qualified Data.Text as Text
 import qualified Data.Map.Strict as Map
 
 import Types
