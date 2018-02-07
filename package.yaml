@@ -44,6 +44,13 @@ executables:
     dependencies:
     - base
     - spyglass
+    - Spock
+    - mtl
+    - text
+    - containers
+    - stm
+    - bytestring-trie
+
     ghc-options:
     - -rtsopts
     - -threaded
