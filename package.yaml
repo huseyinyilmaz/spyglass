@@ -31,7 +31,9 @@ library:
   - text
   - containers
   - stm
-  source-dirs: library
+  - bytestring-trie
+
+source-dirs: library
 
 executables:
   spyglass:
