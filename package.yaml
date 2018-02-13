@@ -15,7 +15,7 @@ extra-source-files:
 - CHANGELOG.md
 - LICENSE.md
 - package.yaml
-- README.md
+- README.rst
 - stack.yaml
 
 ghc-options: -Wall
@@ -31,11 +31,16 @@ library:
   - base
   - Spock
   - mtl
+  - syb
   - text
   - containers
   - stm
   - bytestring-trie
-source-dirs: library
+  - bytestring
+  - http-api-data
+  - aeson
+  - wai
+  source-dirs: library
 
 executables:
   spyglass:
@@ -44,13 +49,6 @@ executables:
     dependencies:
     - base
     - spyglass
-    - Spock
-    - mtl
-    - text
-    - containers
-    - stm
-    - bytestring-trie
-
     ghc-options:
     - -rtsopts
     - -threaded
@@ -78,6 +76,10 @@ tests:
     - spyglass
     - tasty
     - tasty-hspec
+    - hspec
+    - hspec-wai
+    - Spock
+    - aeson
     ghc-options:
     - -rtsopts
     - -threaded
