@@ -17,6 +17,8 @@ import Control.Monad(mzero)
 --import Data.Generics
 import GHC.Generics
 -- FromHttpApiData instance for bytestring
+import Control.Monad.IO.Class (MonadIO)
+import Web.Spock
 
 -- Make bytestrig type usable by api.
 instance FromHttpApiData B.ByteString where
@@ -43,6 +45,6 @@ data AppSession = EmptySession
 
 data AppState = AppState (STM.TVar (Map B.ByteString (STM.TVar (Trie B.ByteString))))
 
--- type ActionCtx ctx a = SpockActionCtx ctx () AppSession AppState a
--- type AppActionCtx = MonadIO m => ActionCtxT ctx m a
--- type AppActionCtx = ActionCtxT ctx m a
+type View ctx m =(SpockState (ActionCtxT ctx m) ~ AppState,
+                  MonadIO m,
+                  HasSpock (ActionCtxT ctx m)) => ActionCtxT ctx m ()
