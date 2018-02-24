@@ -28,4 +28,36 @@ postCollection name = do
     Just trieRef -> text "found it"
     Nothing ->
       -- json (b::Maybe [Item])
-      noContent
+      noContent -- <<<<<<<<<
+
+-- Got this error from line 31
+--
+-- [-Wdeferred-type-errors]
+--     • Could not deduce: ctx ~ ()
+--       from the context: (SpockState (ActionCtxT ctx m) ~ AppState,
+--                          MonadIO m,
+--                          HasSpock (ActionCtxT ctx m))
+--         bound by the type signature for:
+--                    postCollection :: (SpockState (ActionCtxT ctx m) ~ AppState,
+--                                       MonadIO m, HasSpock (ActionCtxT ctx m)) =>
+--                                      B.ByteString -> ActionCtxT ctx m b
+--         at /Users/huseyin/projects/spyglass/.stack-work/intero/intero30689fKO-TEMP.hs:22:1-138
+--       ‘ctx’ is a rigid type variable bound by
+--         the type signature for:
+--           postCollection :: forall ctx (m :: * -> *) b.
+--                             (SpockState (ActionCtxT ctx m) ~ AppState, MonadIO m,
+--                              HasSpock (ActionCtxT ctx m)) =>
+--                             B.ByteString -> ActionCtxT ctx m b
+--         at /Users/huseyin/projects/spyglass/.stack-work/intero/intero30689fKO-TEMP.hs:22:19
+--       Expected type: ActionCtxT ctx m b
+--         Actual type: ActionT m B.ByteString
+--     • In the expression: noContent
+--       In a case alternative: Nothing -> noContent
+--       In a stmt of a 'do' block:
+--         case Map.lookup name m of {
+--           Just trieRef -> text "found it"
+--           Nothing -> noContent }
+--     • Relevant bindings include
+--         postCollection :: B.ByteString -> ActionCtxT ctx m b
+--           (bound at /Users/huseyin/projects/spyglass/.stack-work/intero/intero30689fKO-TEMP.hs:23
+-- :1)
