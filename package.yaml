@@ -26,6 +26,8 @@ default-extensions:
   - FlexibleContexts
   - GADTs
   - RankNTypes
+  - DuplicateRecordFields
+  - GeneralizedNewtypeDeriving
 library:
   dependencies:
   - base

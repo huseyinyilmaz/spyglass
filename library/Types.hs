@@ -33,17 +33,19 @@ instance FromJSON B.ByteString where
 instance ToJSON B.ByteString where
   toJSON = (toJSON . decodeUtf8)
 
+newtype ItemContent = ItemContent {getItemContent:: B.ByteString}
+  deriving (Show, Generic, ToJSON, FromJSON)
 
 data Item = Item {
   term:: B.ByteString,
-  content:: B.ByteString } deriving (Show, Generic)
+  content:: ItemContent } deriving (Show, Generic)
 
 instance ToJSON Item
 instance FromJSON Item
 
 data AppSession = EmptySession
 
-data AppState = AppState (STM.TVar (Map B.ByteString (STM.TVar (Trie B.ByteString))))
+data AppState = AppState (STM.TVar (Map B.ByteString (STM.TVar (Trie ItemContent))))
 
 type View ctx m =(SpockState (ActionCtxT ctx m) ~ AppState,
                   MonadIO m,

@@ -7,14 +7,14 @@ import Test.Hspec.Wai
 import Web.Spock (spockAsApp)
 
 import Server(app)
-import Types(Item(..))
+import Types(Item(..), ItemContent(..))
 
 
 searchData :: [Item]
 searchData = [
-  Item {term="apple", content= "apple content"},
-  Item {term= "cattle", content= "cattle content"},
-  Item {term= "orange", content= "orange content"}
+  Item {term="apple",   content=ItemContent "apple content"},
+  Item {term= "cattle", content=ItemContent "cattle content"},
+  Item {term= "orange", content=ItemContent "orange content"}
   ]
 
 testRoot :: Spec
@@ -30,7 +30,8 @@ testPost =
   with (spockAsApp app) $
   do
     do describe "POST /test" $
-         do it "Post a container" $
+         do it "Post a container" $ do
+              post "/test" (encode searchData) `shouldRespondWith` "" {matchStatus = 201}
               post "/test" (encode searchData) `shouldRespondWith` "" {matchStatus = 201}
 
 spec2 :: Spec
