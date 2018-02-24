@@ -18,6 +18,7 @@ app =
     do ref <- STM.atomically $ STM.newTVar Map.empty
        spockCfg <- defaultSpockCfg EmptySession PCNoDatabase (AppState ref)
        spock spockCfg routes
+
 routes :: SpockM () AppSession AppState ()
 routes =
     do get root $
