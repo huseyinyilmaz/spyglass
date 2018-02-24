@@ -40,6 +40,15 @@ library:
   - http-api-data
   - aeson
   - wai
+  - http-types
+
+  - tasty
+  - tasty-hspec
+  - hspec
+  - hspec-wai
+  - Spock
+  - aeson
+
   source-dirs: library
 
 executables:

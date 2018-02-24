@@ -7,12 +7,14 @@ import Test.Hspec.Wai
 import Web.Spock (spockAsApp)
 
 import Server(app)
-import Types(Item)
+import Types(Item(..))
 
+
+searchData :: [Item]
 searchData = [
-  Item {term: "apple", content: "apple content"},
-  Item {term: "cattle", content: "cattle content"},
-  Item {term: "orange", content: "orange content"}
+  Item {term="apple", content= "apple content"},
+  Item {term= "cattle", content= "cattle content"},
+  Item {term= "orange", content= "orange content"}
   ]
 
 testRoot :: Spec
@@ -23,13 +25,13 @@ testRoot =
          do it "serves the home page" $
               get "/" `shouldRespondWith` "Hello World!" {matchStatus = 200}
 
-testRoot :: Spec
-testRoot =
+testPost :: Spec
+testPost =
   with (spockAsApp app) $
   do
     do describe "POST /test" $
          do it "Post a container" $
-              post "/api/v1" (encode searchData) `shouldRespondWith` "Hello World!" {matchStatus = 200}
+              post "/test" (encode searchData) `shouldRespondWith` "" {matchStatus = 201}
 
 spec2 :: Spec
 spec2 = do
@@ -39,4 +41,5 @@ spec2 = do
 specs :: Spec
 specs = parallel $ do
   testRoot
+  testPost
   spec2

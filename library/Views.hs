@@ -11,7 +11,7 @@ import qualified Data.ByteString as B
 import qualified Control.Concurrent.STM as STM
 import Control.Monad.IO.Class(liftIO)
 import qualified Data.Map.Strict as Map
-
+import Utility(noContent)
 
 getCollection :: (SpockState (ActionCtxT ctx m) ~ AppState, MonadIO m, HasSpock (ActionCtxT ctx m)) => B.ByteString -> ActionCtxT ctx m b
 getCollection name = do
@@ -22,8 +22,10 @@ getCollection name = do
 postCollection :: (SpockState (ActionCtxT ctx m) ~ AppState, MonadIO m, HasSpock (ActionCtxT ctx m)) => B.ByteString -> ActionCtxT ctx m b
 postCollection name = do
   (AppState mapRef) <- getState
+  let b = Nothing --b <- Nothing --jsonBody
   m <- liftIO $ STM.readTVarIO mapRef
   case Map.lookup name m of
     Just trieRef -> text "found it"
     Nothing ->
-      text ("Hello " <> decodeUtf8 name <> ", you are visitor number " <> Text.pack (show (0::Integer)))
+      -- json (b::Maybe [Item])
+      noContent
