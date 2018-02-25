@@ -19,6 +19,7 @@ import GHC.Generics
 -- FromHttpApiData instance for bytestring
 import Control.Monad.IO.Class (MonadIO)
 import Web.Spock
+import Data.String(IsString)
 
 -- Make bytestrig type usable by api.
 instance FromHttpApiData B.ByteString where
@@ -34,7 +35,7 @@ instance ToJSON B.ByteString where
   toJSON = (toJSON . decodeUtf8)
 
 newtype ItemContent = ItemContent {getItemContent:: B.ByteString}
-  deriving (Show, Generic, ToJSON, FromJSON)
+  deriving (Show, Generic, ToJSON, FromJSON, Eq, Ord, Monoid, IsString)
 
 data Item = Item {
   term:: B.ByteString,
@@ -45,7 +46,7 @@ instance FromJSON Item
 
 data AppSession = EmptySession
 
-data AppState = AppState (STM.TVar (Map B.ByteString (STM.TVar (Trie ItemContent))))
+data AppState = AppState (STM.TVar (Map B.ByteString (STM.TVar (Trie [ItemContent]))))
 
 type View ctx m =(SpockState (ActionCtxT ctx m) ~ AppState,
                   MonadIO m,
