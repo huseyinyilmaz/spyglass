@@ -1,13 +1,21 @@
 module Utility (noContent,
                 errorResponse,
-                notFoundResponse) where
+                notFoundResponse,
+                toLower) where
 
+import Data.Text.Encoding (decodeUtf8)
+import Data.Text.Encoding (encodeUtf8)
+import qualified Data.Text as Text
 import Web.Spock
 import Control.Monad.IO.Class (MonadIO)
 import qualified Data.ByteString as B
 import Network.HTTP.Types.Status(created201,
                                  badRequest400,
                                  notFound404)
+
+
+toLower :: B.ByteString -> B.ByteString
+toLower = encodeUtf8 . Text.toLower . decodeUtf8
 
 noContent :: MonadIO m => ActionCtxT ctx m ()
 noContent = do

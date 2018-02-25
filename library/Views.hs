@@ -13,7 +13,7 @@ import qualified Data.ByteString.Char8 as C8
 import qualified Control.Concurrent.STM as STM
 import Control.Monad.IO.Class(liftIO)
 import qualified Data.Map.Strict as Map
-import Utility(noContent, errorResponse, notFoundResponse)
+import Utility(noContent, errorResponse, notFoundResponse, toLower)
 import Data.Trie as Trie
 import Data.Function (on)
 import Data.List (groupBy, sort, head)
@@ -26,10 +26,9 @@ makeTrie is = fromList items
       -- t <- C8.words (term i)
       st <- C8.tails (term i)
       return (st, content i)
-
     -- for equal values we dont need to sort by second element here.
     groupedItems = groupBy ((==) `on` fst) $ sort itemList
-    listToKV l = ((fst (Data.List.head l)), (fmap snd l))
+    listToKV l = (((toLower . fst) (Data.List.head l)), (fmap snd l))
     items = fmap listToKV groupedItems
 
 getCollection :: B.ByteString -> View ctx m
@@ -44,7 +43,7 @@ getCollection name = do
         Nothing -> notFoundResponse "Error: Collection does not exist."
         Just trieRef -> do
           trie <- liftIO $ STM.readTVarIO trieRef
-          json $ (foldr (<>) []) $ fmap snd $ Trie.toList $ Trie.submap query trie
+          json $ (foldr (<>) []) $ fmap snd $ Trie.toList $ Trie.submap (toLower query) trie
 
 postCollection :: B.ByteString -> View ctx m
 postCollection name = do
