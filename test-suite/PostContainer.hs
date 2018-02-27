@@ -6,8 +6,10 @@ import Test.Hspec.Wai
 
 import Web.Spock (spockAsApp)
 
-import Server(app)
-import Types(Item(..))
+import Server(getApp)
+import Types(Item(..), Config(..))
+
+import Network.Wai(Middleware)
 
 
 searchData :: [Item]
@@ -20,6 +22,15 @@ searchData = [
   Item {term= "cmiddd",  content= "c middle d content"},
   Item {term= "first second third forth",  content= "first second third forth content"}
   ]
+
+config :: Config
+config = Config {
+  port=8080,
+  callbacks=[]
+  }
+
+app :: IO Middleware
+app = getApp config
 
 testRoot :: Spec
 testRoot =

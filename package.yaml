@@ -43,6 +43,9 @@ library:
   - aeson
   - wai
   - http-types
+  - directory
+  - yaml
+  - ekg
 
   - tasty
   - tasty-hspec
@@ -91,6 +94,7 @@ tests:
     - hspec-wai
     - Spock
     - aeson
+    - wai
     ghc-options:
     - -rtsopts
     - -threaded

@@ -33,7 +33,7 @@ makeTrie is = fromList items
 
 getCollection :: B.ByteString -> View ctx m
 getCollection name = do
-  (AppState mapRef) <- getState
+  AppState {getMapRef=mapRef} <- getState
   maybeQuery <- param "query"
   case maybeQuery of
     Nothing -> notFoundResponse "Error: query parameter required."
@@ -47,7 +47,7 @@ getCollection name = do
 
 postCollection :: B.ByteString -> View ctx m
 postCollection name = do
-  (AppState mapRef) <- getState
+  AppState {getMapRef=mapRef} <- getState
   m <- liftIO $ STM.readTVarIO mapRef
   b <- jsonBody
   -- (b::Maybe [Item])

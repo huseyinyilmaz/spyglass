@@ -44,9 +44,23 @@ data Item = Item {
 instance ToJSON Item
 instance FromJSON Item
 
+data Config = Config {
+  port::Int,
+  callbacks::[B.ByteString],
+  monitoringEnabled::Bool,
+  monitoringIP::B.ByteString,
+  monitoringPort::Int
+  } deriving (Generic, Show, Eq)
+
+instance ToJSON Config
+instance FromJSON Config
+
 data AppSession = EmptySession
 
-data AppState = AppState (STM.TVar (Map B.ByteString (STM.TVar (Trie [ItemContent]))))
+data AppState = AppState {
+  getMapRef::(STM.TVar (Map B.ByteString (STM.TVar (Trie [ItemContent])))),
+  getConfig::Config
+}
 
 type View ctx m =(SpockState (ActionCtxT ctx m) ~ AppState,
                   MonadIO m,
