@@ -16,6 +16,7 @@ import Network.Wai.Metrics
 -- import Control.Monad(when)
 import Data.Monoid((<>))
 import qualified Data.ByteString.Char8 as C8
+import Network.Wai.Middleware.RequestLogger(logStdout, logStdoutDev)
 
 main :: IO ()
 main = do
@@ -28,6 +29,7 @@ main = do
          putStrLn ("Monitoring is enabled at " <> (C8.unpack monIp) <> ":" <>(show monPort))
          let r = do
                (middleware (metrics waiMetrics))
+               (middleware logStdout)
                routes
          return r
        else

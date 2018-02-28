@@ -42,6 +42,7 @@ library:
   - http-api-data
   - aeson
   - wai
+  - wai-extra
   - http-types
   - directory
   - yaml

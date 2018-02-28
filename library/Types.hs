@@ -49,7 +49,9 @@ data Config = Config {
   callbacks::[B.ByteString],
   monitoringEnabled::Bool,
   monitoringIP::B.ByteString,
-  monitoringPort::Int
+  monitoringPort::Int,
+  loggingEnabled::Bool,
+  loggingForDevelopment::Bool
   } deriving (Generic, Show, Eq)
 
 instance ToJSON Config
