@@ -46,6 +46,7 @@ library:
   - directory
   - yaml
   - ekg
+  - wai-middleware-metrics
 
   - tasty
   - tasty-hspec
