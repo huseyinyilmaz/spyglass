@@ -38,8 +38,8 @@ newtype ItemContent = ItemContent {getItemContent:: B.ByteString}
   deriving (Show, Generic, ToJSON, FromJSON, Eq, Ord, Monoid, IsString)
 
 data Item = Item {
-  term:: B.ByteString,
-  content:: ItemContent } deriving (Show, Generic)
+  term:: !B.ByteString,
+  content:: !ItemContent } deriving (Show, Generic)
 
 instance ToJSON Item
 instance FromJSON Item

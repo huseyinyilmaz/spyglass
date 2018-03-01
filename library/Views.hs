@@ -16,8 +16,9 @@ import qualified Data.Map.Strict as Map
 import Utility(noContent, errorResponse, notFoundResponse, toLower)
 import Data.Trie as Trie
 import Data.Function (on)
-import Data.List (groupBy, sort, head)
+import Data.List (groupBy, sort, head, sortBy)
 
+-- XXX make this line faster.
 makeTrie :: [Item] -> Trie [ItemContent]
 makeTrie is = fromList items
   where
@@ -27,8 +28,8 @@ makeTrie is = fromList items
       st <- C8.tails (term i)
       return (st, content i)
     -- for equal values we dont need to sort by second element here.
-    groupedItems = groupBy ((==) `on` fst) $ sort itemList
-    listToKV l = (((toLower . fst) (Data.List.head l)), (fmap snd l))
+    groupedItems = groupBy ((==) `on` fst) $ sort itemList   -- XXX this line takes a long time.
+    listToKV l = (((toLower . fst) (Data.List.head l)), (sortBy (flip compare) (fmap snd l)))
     items = fmap listToKV groupedItems
 
 getCollection :: B.ByteString -> View ctx m
