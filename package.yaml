@@ -54,6 +54,7 @@ library:
   - hspec
   - hspec-wai
   - Spock
+  - Spock-core
   - aeson
 
   source-dirs: library

@@ -10,31 +10,16 @@ import qualified Data.Map.Strict as Map
 import Types
 import qualified Views as Views
 import qualified Env as Env
-import System.Remote.Monitoring
-import Network.Wai.Metrics
-
--- import Control.Monad(when)
-import Data.Monoid((<>))
-import qualified Data.ByteString.Char8 as C8
-import Network.Wai.Middleware.RequestLogger(logStdout, logStdoutDev)
+import Middlewares
 
 main :: IO ()
 main = do
   config <- Env.readConfig
-  r <- if (monitoringEnabled config) then do
-         let monIp=(monitoringIP config)
-             monPort=(monitoringPort config)
-         ekg <- forkServer monIp monPort
-         waiMetrics <- registerWaiMetrics (serverMetricStore ekg)
-         putStrLn ("Monitoring is enabled at " <> (C8.unpack monIp) <> ":" <>(show monPort))
-         let r = do
-               (middleware (metrics waiMetrics))
-               (middleware logStdout)
-               routes
-         return r
-       else
-         return routes
-  runSpock (port config) (getApp config r)
+  middlewares <- getMiddlewares config
+  let routesWithMiddlewares = do
+        middlewares
+        routes
+  runSpock (port config) (getApp config routesWithMiddlewares)
 
 --getApp :: Config -> WaiMetrics -> IO Middleware
 getApp :: Config -> SpockM () AppSession AppState () -> IO Middleware
