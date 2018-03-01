@@ -5,37 +5,41 @@ import Network.Wai.Metrics
 import Data.Monoid((<>))
 import Types
 import Network.Wai.Middleware.RequestLogger(logStdout, logStdoutDev)
-import Web.Spock
-import Web.Spock.Routing(RouteM)
+import Network.Wai (Middleware)
+import Network.Wai.Middleware.Gzip
 
-getMonitoringMiddleware :: (Monad (t ctx m), Monad m, RouteM t) => Config -> IO (t ctx m ())
+getMonitoringMiddleware :: Config -> IO Middleware
 getMonitoringMiddleware config = do
-  m <- if (monitoringEnabled config) then do
+  if (monitoringEnabled config) then do
     let monIp=(monitoringIP config)
         monPort=(monitoringPort config)
     ekg <- forkServer monIp monPort
     waiMetrics <- registerWaiMetrics (serverMetricStore ekg)
     putStrLn ("Monitoring is enabled at " <> (C8.unpack monIp) <> ":" <>(show monPort))
-    return (middleware (metrics waiMetrics))
+    return (metrics waiMetrics)
   else
-    return $ return ()
-  return m
+    return id
 
 
-getLoggingMiddleware :: (Monad (t ctx m), Monad m, Monad m1, RouteM t) => Config -> m1 (t ctx m ())
+
+getLoggingMiddleware :: Config -> IO Middleware
 getLoggingMiddleware config =
   return $ if (loggingEnabled config) then
     if (loggingForDevelopment config) then
-      middleware logStdoutDev
+      logStdoutDev
     else
-      middleware logStdout
+      logStdout
   else
-    return ()
+    id
 
-getMiddlewares :: (RouteM t, Monad (t ctx m), Monad m) => Config -> IO (t ctx m ())
+
+getGzipMiddleware :: Config -> IO Middleware
+getGzipMiddleware _ = return $ gzip def
+
+
+getMiddlewares :: Config -> IO Middleware
 getMiddlewares config = do
   logging <- getLoggingMiddleware config
   monitoring <- getMonitoringMiddleware config
-  return $ do
-    logging
-    monitoring
+  gz <- getGzipMiddleware config
+  return (gz . logging . monitoring)

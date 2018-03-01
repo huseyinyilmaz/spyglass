@@ -4,7 +4,6 @@ import Web.Spock
 import Web.Spock.Config
 import Network.Wai (Middleware)
 
---import Control.Monad.Trans
 import qualified Control.Concurrent.STM as STM
 import qualified Data.Map.Strict as Map
 import Types
@@ -17,11 +16,10 @@ main = do
   config <- Env.readConfig
   middlewares <- getMiddlewares config
   let routesWithMiddlewares = do
-        middlewares
+        middleware middlewares
         routes
   runSpock (port config) (getApp config routesWithMiddlewares)
 
---getApp :: Config -> WaiMetrics -> IO Middleware
 getApp :: Config -> SpockM () AppSession AppState () -> IO Middleware
 getApp config r =
     do ref <- STM.atomically $ STM.newTVar Map.empty
