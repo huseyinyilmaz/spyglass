@@ -48,14 +48,14 @@ library:
   - yaml
   - ekg
   - wai-middleware-metrics
+  # - Spock-core
+  # - aeson
 
-  - tasty
-  - tasty-hspec
-  - hspec
-  - hspec-wai
-  - Spock
-  - Spock-core
-  - aeson
+  # - tasty
+  # - tasty-hspec
+  # - hspec
+  # - hspec-wai
+
 
   source-dirs: library
 
