@@ -60,7 +60,7 @@ instance FromJSON Config
 data AppSession = EmptySession
 
 data AppState = AppState {
-  getMapRef::(STM.TVar (Map B.ByteString (STM.TVar (Trie [ItemContent])))),
+  getMapRef::STM.TVar (Map B.ByteString (Trie [ItemContent])),
   getConfig::Config
 }
 

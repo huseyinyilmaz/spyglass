@@ -42,8 +42,7 @@ getCollection name = do
       m <- liftIO $ STM.readTVarIO mapRef
       case Map.lookup name m of
         Nothing -> notFoundResponse "Error: Collection does not exist."
-        Just trieRef -> do
-          trie <- liftIO $ STM.readTVarIO trieRef
+        Just trie -> do
           json $ (foldr (<>) []) $ fmap snd $ Trie.toList $ Trie.submap (toLower query) trie
 
 postCollection :: B.ByteString -> View ctx m
@@ -51,11 +50,9 @@ postCollection name = do
   AppState {getMapRef=mapRef} <- getState
   m <- liftIO $ STM.readTVarIO mapRef
   b <- jsonBody
-  -- (b::Maybe [Item])
   case (b::Maybe [Item]) of
     Nothing -> errorResponse "Error: Invalid request body."
     Just is -> do
-      emptyRef <- (liftIO . STM.newTVarIO . makeTrie) is
-      let newMap = (Map.insert name emptyRef m)
+      let newMap = (Map.insert name (makeTrie is) m)
       liftIO $ STM.atomically$ STM.writeTVar mapRef newMap
       noContent
