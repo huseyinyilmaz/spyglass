@@ -4,10 +4,12 @@ import Test.Tasty.Hspec(Spec, it, shouldBe, parallel)
 import Test.Hspec
 import Test.Hspec.Wai
 
-import Web.Spock (spockAsApp)
+import Web.Spock (spockAsApp, middleware)
 
-import Server(getApp)
+import Server(getApp, routes)
 import Types(Item(..), Config(..))
+import Middlewares
+
 
 import Network.Wai(Middleware)
 
@@ -26,11 +28,21 @@ searchData = [
 config :: Config
 config = Config {
   port=8080,
-  callbacks=[]
+  callbacks=[],
+  monitoringEnabled=False,
+  monitoringIP="0.0.0.0",
+  monitoringPort=8888,
+  loggingEnabled=False,
+  loggingForDevelopment=False
   }
 
 app :: IO Middleware
-app = getApp config
+app = do
+  middlewares <- getMiddlewares config
+  let routesWithMiddlewares = do
+        middleware middlewares
+        routes
+  getApp config routesWithMiddlewares
 
 testRoot :: Spec
 testRoot =

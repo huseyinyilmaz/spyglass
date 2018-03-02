@@ -45,13 +45,14 @@ instance ToJSON Item
 instance FromJSON Item
 
 data Config = Config {
-  port::Int,
-  callbacks::[B.ByteString],
-  monitoringEnabled::Bool,
-  monitoringIP::B.ByteString,
-  monitoringPort::Int,
-  loggingEnabled::Bool,
-  loggingForDevelopment::Bool
+  port:: !Int,
+  callbacks:: ![B.ByteString],
+  gzipEnabled:: !Bool,
+  monitoringEnabled:: !Bool,
+  monitoringIP:: !B.ByteString,
+  monitoringPort:: !Int,
+  loggingEnabled:: !Bool,
+  loggingForDevelopment:: !Bool
   } deriving (Generic, Show, Eq)
 
 instance ToJSON Config

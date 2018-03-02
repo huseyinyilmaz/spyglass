@@ -16,20 +16,24 @@ import qualified Data.Map.Strict as Map
 import Utility(noContent, errorResponse, notFoundResponse, toLower)
 import Data.Trie as Trie
 import Data.Function (on)
-import Data.List (groupBy, sort, head, sortBy)
+import Data.List (groupBy, head, sortBy)
 
--- XXX make this line faster.
 makeTrie :: [Item] -> Trie [ItemContent]
 makeTrie is = fromList items
   where
+    itemList :: [(B.ByteString, ItemContent)]
     itemList = do
       i <- is
+      let Item{term=t, content=c} = i
       -- t <- C8.words (term i)
-      st <- C8.tails (term i)
-      return (st, content i)
+      tt <- C8.tails t
+      return (tt, c)
     -- for equal values we dont need to sort by second element here.
-    groupedItems = groupBy ((==) `on` fst) $ sort itemList   -- XXX this line takes a long time.
-    listToKV l = (((toLower . fst) (Data.List.head l)), (sortBy (flip compare) (fmap snd l)))
+    groupedItems = groupBy ((==) `on` fst) (sortBy (flip compare) itemList) -- XXX this line takes a long time.
+    listToKV::[(B.ByteString, ItemContent)] -> (B.ByteString, [ItemContent])
+    listToKV l = (((toLower . fst) (Data.List.head l)), (fmap snd l))
+
+    items :: [(B.ByteString, [ItemContent])]
     items = fmap listToKV groupedItems
 
 getCollection :: B.ByteString -> View ctx m

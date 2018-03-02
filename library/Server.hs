@@ -22,7 +22,7 @@ main = do
 
 getApp :: Config -> SpockM () AppSession AppState () -> IO Middleware
 getApp config r =
-    do ref <- STM.atomically $ STM.newTVar Map.empty
+    do ref <- STM.newTVarIO Map.empty
        spockCfg <- defaultSpockCfg EmptySession PCNoDatabase (AppState ref config)
        spock (spockCfg{ spc_maxRequestSize=Nothing }) r
 

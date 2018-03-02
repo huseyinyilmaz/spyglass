@@ -70,7 +70,7 @@ executables:
     - -rtsopts
     - -threaded
     - -with-rtsopts=-N
-
+    - -O2
 benchmarks:
   spyglass-benchmarks:
     source-dirs: benchmark

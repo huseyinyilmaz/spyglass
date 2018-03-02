@@ -34,8 +34,11 @@ getLoggingMiddleware config =
 
 
 getGzipMiddleware :: Config -> IO Middleware
-getGzipMiddleware _ = return $ gzip def
-
+getGzipMiddleware config =
+  return $ if (loggingEnabled config) then
+             gzip def
+           else
+             id
 
 getMiddlewares :: Config -> IO Middleware
 getMiddlewares config = do
