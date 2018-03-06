@@ -31,7 +31,6 @@ default-extensions:
 library:
   dependencies:
   - base
-  - Spock
   - mtl
   - syb
   - text
@@ -42,13 +41,14 @@ library:
   - http-api-data
   - aeson
   - wai
+  - warp
   - wai-extra
   - http-types
   - directory
   - yaml
   - ekg
   - wai-middleware-metrics
-  # - Spock-core
+
   # - aeson
 
   # - tasty
@@ -95,7 +95,6 @@ tests:
     - tasty-hspec
     - hspec
     - hspec-wai
-    - Spock
     - aeson
     - wai
     ghc-options:

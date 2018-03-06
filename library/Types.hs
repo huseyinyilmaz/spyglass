@@ -2,24 +2,19 @@
 
 module Types where
 
--- import Web.Spock.Config
-
--- import Data.IORef
 import qualified Control.Concurrent.STM as STM
 import Data.Trie(Trie)
 import Data.Map.Strict(Map)
 import qualified Data.ByteString as B
 import Data.Text.Encoding(encodeUtf8, decodeUtf8)
---import qualified Control.Monad.IO.Class.MonadIO as MonadIO
 import Web.HttpApiData (FromHttpApiData(..))
 import Data.Aeson
 import Control.Monad(mzero)
---import Data.Generics
 import GHC.Generics
--- FromHttpApiData instance for bytestring
 import Control.Monad.IO.Class (MonadIO)
-import Web.Spock
 import Data.String(IsString)
+import Network.Wai
+-- import Control.Monad.Reader (ReaderT)
 
 -- Make bytestrig type usable by api.
 instance FromHttpApiData B.ByteString where
@@ -58,13 +53,10 @@ data Config = Config {
 instance ToJSON Config
 instance FromJSON Config
 
-data AppSession = EmptySession
-
 data AppState = AppState {
   getMapRef::STM.TVar (Map B.ByteString (Trie [ItemContent])),
   getConfig::Config
 }
 
-type View ctx m =(SpockState (ActionCtxT ctx m) ~ AppState,
-                  MonadIO m,
-                  HasSpock (ActionCtxT ctx m)) => ActionCtxT ctx m ()
+
+data AppStack = ReaderT AppState (IO ResponseReceived)
