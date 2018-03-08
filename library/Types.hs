@@ -6,6 +6,7 @@ import qualified Control.Concurrent.STM as STM
 import Data.Trie(Trie)
 import Data.Map.Strict(Map)
 import qualified Data.ByteString as B
+import Data.Text (Text)
 import Data.Text.Encoding(encodeUtf8, decodeUtf8)
 import Web.HttpApiData (FromHttpApiData(..))
 import Data.Aeson
@@ -54,9 +55,9 @@ instance ToJSON Config
 instance FromJSON Config
 
 data AppState = AppState {
-  getMapRef::STM.TVar (Map B.ByteString (Trie [ItemContent])),
+  getMapRef::STM.TVar (Map Text (Trie [ItemContent])),
   getConfig::Config
 }
 
 
-data AppStack = ReaderT AppState (IO ResponseReceived)
+-- data AppStack = ReaderT AppState IO Response

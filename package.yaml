@@ -69,7 +69,7 @@ executables:
     ghc-options:
     - -rtsopts
     - -threaded
-    - -with-rtsopts=-N
+    - -with-rtsopts=-T-N
     - -O2
 benchmarks:
   spyglass-benchmarks:

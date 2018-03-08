@@ -1,30 +1,39 @@
-module Utility (toLower) where
+module Utility (toLower,
+                noContent,
+                errorResponse,
+                notFoundResponse,
+                notAllowed) where
 
 import Data.Text.Encoding (decodeUtf8)
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Text as Text
 -- import Control.Monad.IO.Class (MonadIO)
+import Network.Wai
 import qualified Data.ByteString as B
--- import Network.HTTP.Types.Status(created201,
---                                  badRequest400,
---                                  notFound404)
+import qualified Data.ByteString.Lazy as LB
+
+import Network.HTTP.Types.Status(created201,
+                                 badRequest400,
+                                 notFound404,
+                                 methodNotAllowed405)
 
 
 toLower :: B.ByteString -> B.ByteString
 toLower = encodeUtf8 . Text.toLower . decodeUtf8
 
--- noContent :: MonadIO m => ActionCtxT ctx m ()
--- noContent = do
---   setStatus created201
---   bytes ""
+noContent :: Response
+noContent = do
+  responseLBS created201 [] ""
+
+notAllowed :: Response
+notAllowed = do
+  responseLBS methodNotAllowed405 [] ""
 
 
--- errorResponse :: MonadIO m => B.ByteString -> ActionCtxT ctx m ()
--- errorResponse e = do
---   setStatus badRequest400
---   bytes e
+errorResponse :: LB.ByteString -> Response
+errorResponse e = do
+  responseLBS badRequest400 [] e
 
--- notFoundResponse :: MonadIO m => B.ByteString -> ActionCtxT ctx m ()
--- notFoundResponse e = do
---   setStatus notFound404
---   bytes e
+notFoundResponse :: LB.ByteString -> Response
+notFoundResponse e = do
+  responseLBS notFound404 [] e

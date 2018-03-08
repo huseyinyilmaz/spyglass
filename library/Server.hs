@@ -9,8 +9,9 @@ import Types
 import qualified Views as Views
 import qualified Env as Env
 import Middlewares
-import Network.HTTP.Types.Status(status200)
-import qualified Data.ByteString.Lazy.Char8 as C8
+import Utility
+-- import Network.HTTP.Types.Status(status200)
+-- import qualified Data.ByteString.Lazy.Char8 as C8
 --import Control.Monad.Trans
 import Control.Monad.Reader (ReaderT, runReaderT)
 main :: IO ()
@@ -18,19 +19,22 @@ main = do
   config <- Env.readConfig
   ref <- STM.newTVarIO Map.empty
   let appState = AppState ref config
-  --middlewares <- getMiddlewares config
-  run (port config) (getApp config)
+  middlewares <- getMiddlewares config
+  run (port config) (middlewares (getApp appState))
 
 getApp :: AppState -> Application
 --getApp :: AppState -> Application
-getApp config request respond =
-  runReaderT response config
+getApp config request respond = do
+  resp <- runReaderT response config
+  respond resp
   where
-    response = mainHandler requestResponde
+    response :: ReaderT AppState IO Response
+    response = router request
 
-mainHandler request respond = do
-  respond $ case requestMethod request of
-    "GET" -> getCollection request
-    "POST" -> postCollection request
-
+router :: Request -> ReaderT AppState IO Response
+router request = do
+  case requestMethod request of
+    "GET" -> Views.getCollection request
+    "POST" -> Views.postCollection request
+    _ -> return notAllowed
 --(respond $ responseLBS status200 [] ((C8.pack . show) request))

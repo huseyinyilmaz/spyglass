@@ -1,6 +1,7 @@
 module Views(getCollection,
-             postCollection) where
--- import qualified Data.Text as Text
+             postCollection,
+             debugView) where
+import qualified Data.Text as Text
 -- import Data.Text.Encoding (decodeUtf8)
 -- import Data.Text.Encoding (encodeUtf8)
 import Types
@@ -12,14 +13,16 @@ import qualified Data.ByteString.Char8 as C8
 import qualified Control.Concurrent.STM as STM
 import Control.Monad.IO.Class(liftIO)
 import qualified Data.Map.Strict as Map
-import Utility(toLower)
+import Utility(toLower, noContent, errorResponse)
 import Data.Trie as Trie
 import Data.Function (on)
-import Data.List (groupBy, head, sortBy)
+import Data.List (groupBy, head, sortBy, lookup)
 
-import Network.HTTP.Types.Status(status200)
+import Network.HTTP.Types.Status(status200, status404)
 import qualified Data.ByteString.Lazy.Char8 as LC8
 import Network.Wai
+import Control.Monad.Reader
+import Data.Aeson(decode, encode)
 
 makeTrie :: [Item] -> Trie [ItemContent]
 makeTrie is = fromList items
@@ -39,11 +42,52 @@ makeTrie is = fromList items
     items :: [(B.ByteString, [ItemContent])]
     items = fmap listToKV groupedItems
 
-getCollection :: Request -> AppStack
-getCollection request = responseLBS status200 [] ((LC8.pack . show) request)
+getCollection :: Request -> ReaderT AppState IO Response
+getCollection request = do
+  AppState {getMapRef=mapRef} <- ask
+  m <- liftIO $ STM.readTVarIO mapRef
 
-postCollection request = return $ responseLBS status200 [] ((LC8.pack . show) request)
+  let maybeQuery :: Maybe [ItemContent]
+      maybeQuery = do
+        -- Get query string from params
+        maybeQ <- Data.List.lookup "query" (queryString request)
+        query <- maybeQ
+        -- Get path name from map
+        trie <- Map.lookup name m
+        -- Get results from query
+        return $ (foldr (<>) []) $ fmap snd $ Trie.toList $ Trie.submap (toLower query) trie
 
+  lift $ return $ case maybeQuery of
+    Just query -> responseLBS status200 [] (encode query)
+    Nothing -> responseLBS status404 [] "Not found"
+  where
+    name = Text.unlines (pathInfo request)
+
+postCollection :: Request -> ReaderT AppState IO Response
+postCollection request = do
+  AppState {getMapRef=mapRef} <- ask
+  do
+    m <- liftIO $ STM.readTVarIO mapRef
+    body <- liftIO $ strictRequestBody request
+    lift $ case ((decode body)::Maybe [Item]) of
+      Nothing -> return $ errorResponse "Error: Invalid request body."
+      Just is -> do
+        let newMap = (Map.insert name (makeTrie is) m)
+        STM.atomically$ STM.writeTVar mapRef newMap
+        return noContent
+  where
+    name = Text.unlines (pathInfo request)
+
+
+debugView :: Request -> ReaderT AppState IO Response
+debugView request = do
+  -- state <- ask
+  (lift . return) response
+  where
+    response :: Response
+    response = responseLBS status200 [] ((LC8.pack . show) request)
+
+--postCollection request = return $ responseLBS status200 [] ((LC8.pack . show) request)
 
 -- getCollection :: B.ByteString -> IO B.ByteString
 -- getCollection name = do

@@ -11,7 +11,6 @@ import qualified Data.ByteString as B
 -- import Data.Monoid((<>))
 import Types
 
-
 readConfig :: IO Config
 readConfig = do
   -- home <- getHomeDirectory
