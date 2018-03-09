@@ -76,7 +76,7 @@ getCollection request = do
             (readMaybe . Text.unpack . decodeUtf8) limitBS
           limit = fromMaybe defaultLimit maybeLimit
       responseLBS status200 [] (encode (take limit query))
-    Nothing -> responseLBS status404 [] "Not found"
+    Nothing -> responseLBS status404 [] "Not Found"
   where
     name = Text.unlines (pathInfo request)
 
