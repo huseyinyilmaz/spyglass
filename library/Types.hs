@@ -12,9 +12,9 @@ import Web.HttpApiData (FromHttpApiData(..))
 import Data.Aeson
 import Control.Monad(mzero)
 import GHC.Generics
-import Control.Monad.IO.Class (MonadIO)
+-- import Control.Monad.IO.Class (MonadIO)
 import Data.String(IsString)
-import Network.Wai
+-- import Network.Wai
 -- import Control.Monad.Reader (ReaderT)
 
 -- Make bytestrig type usable by api.
@@ -41,14 +41,15 @@ instance ToJSON Item
 instance FromJSON Item
 
 data Config = Config {
-  port:: !Int,
-  callbacks:: ![B.ByteString],
-  gzipEnabled:: !Bool,
-  monitoringEnabled:: !Bool,
-  monitoringIP:: !B.ByteString,
-  monitoringPort:: !Int,
-  loggingEnabled:: !Bool,
-  loggingForDevelopment:: !Bool
+  port:: Int,
+  callbacks:: [B.ByteString],
+  gzipEnabled:: Bool,
+  monitoringEnabled:: Bool,
+  monitoringIP:: B.ByteString,
+  monitoringPort:: Int,
+  loggingEnabled:: Bool,
+  loggingForDevelopment:: Bool,
+  defaultResultLimit:: Int
   } deriving (Generic, Show, Eq)
 
 instance ToJSON Config

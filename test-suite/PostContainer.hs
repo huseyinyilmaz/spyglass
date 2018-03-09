@@ -3,16 +3,10 @@ import Data.Aeson
 import Test.Tasty.Hspec(Spec, it, shouldBe, parallel)
 import Test.Hspec
 import Test.Hspec.Wai
-
-import Web.Spock (spockAsApp, middleware)
-
-import Server(getApp, routes)
+import Network.Wai
+import Server(getApp, getState)
 import Types(Item(..), Config(..))
 import Middlewares
-
-
-import Network.Wai(Middleware)
-
 
 searchData :: [Item]
 searchData = [
@@ -33,20 +27,20 @@ config = Config {
   monitoringIP="0.0.0.0",
   monitoringPort=8888,
   loggingEnabled=False,
-  loggingForDevelopment=False
+  loggingForDevelopment=False,
+  gzipEnabled=False,
+  defaultResultLimit=20
   }
 
-app :: IO Middleware
+app :: IO Application
 app = do
+  appState <- getState config
   middlewares <- getMiddlewares config
-  let routesWithMiddlewares = do
-        middleware middlewares
-        routes
-  getApp config routesWithMiddlewares
+  return (middlewares (getApp appState))
 
 testRoot :: Spec
 testRoot =
-  with (spockAsApp app) $
+  with app $
   do
     do describe "GET /" $
          do it "serves the home page" $
@@ -54,7 +48,7 @@ testRoot =
 
 testPost :: Spec
 testPost =
-  with (spockAsApp app) $
+  with app $
   do
     do describe "POST /test" $
          do it "Post a container" $ do
@@ -62,7 +56,7 @@ testPost =
 
 testPostGet :: Spec
 testPostGet =
-  with (spockAsApp app) $
+  with app $
   do
     do describe "POST /test, Get /test" $
          do it "Post a container than test queries." $ do
@@ -76,7 +70,7 @@ testPostGet =
 
 testGetNotFound :: Spec
 testGetNotFound =
-  with (spockAsApp app) $
+  with app $
   do
     do describe "GET /test 404" $
         do it "Sends a get request and expects 404 as a result." $ do

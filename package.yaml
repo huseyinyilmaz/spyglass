@@ -49,12 +49,11 @@ library:
   - ekg
   - wai-middleware-metrics
 
-  # - aeson
-
-  # - tasty
-  # - tasty-hspec
-  # - hspec
-  # - hspec-wai
+  - aeson
+  - tasty
+  - tasty-hspec
+  - hspec
+  - hspec-wai
 
 
   source-dirs: library

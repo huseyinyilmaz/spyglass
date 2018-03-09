@@ -1,28 +1,32 @@
 module Views(getCollection,
              postCollection,
              debugView) where
+
 import qualified Data.Text as Text
--- import Data.Text.Encoding (decodeUtf8)
+import Data.Text.Encoding (decodeUtf8)
 -- import Data.Text.Encoding (encodeUtf8)
 import Types
 -- import Control.Monad.IO.Class (MonadIO)
 import Data.Monoid
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
+
 -- import Control.Monad.Trans
 import qualified Control.Concurrent.STM as STM
 import Control.Monad.IO.Class(liftIO)
 import qualified Data.Map.Strict as Map
-import Utility(toLower, noContent, errorResponse)
+import Utility(toLower, noContent, errorResponse, reverseLengthSort)
 import Data.Trie as Trie
 import Data.Function (on)
-import Data.List (groupBy, head, sortBy, lookup)
-
+import Data.List (groupBy, head, lookup, sort)
+import Data.Maybe (fromMaybe)
 import Network.HTTP.Types.Status(status200, status404)
 import qualified Data.ByteString.Lazy.Char8 as LC8
 import Network.Wai
 import Control.Monad.Reader
 import Data.Aeson(decode, encode)
+import Text.Read(readMaybe)
+-- import Data.Ord (comparing)
 
 makeTrie :: [Item] -> Trie [ItemContent]
 makeTrie is = fromList items
@@ -34,17 +38,23 @@ makeTrie is = fromList items
       -- t <- C8.words (term i)
       tt <- C8.tails t
       return (tt, c)
-    -- for equal values we dont need to sort by second element here.
-    groupedItems = groupBy ((==) `on` fst) (sortBy (flip compare) itemList) -- XXX this line takes a long time.
-    listToKV::[(B.ByteString, ItemContent)] -> (B.ByteString, [ItemContent])
-    listToKV l = (((toLower . fst) (Data.List.head l)), (fmap snd l))
+    groupedItems = groupBy equalOnFirst (sort itemList)
 
+    listToKV::[(B.ByteString, ItemContent)] -> (B.ByteString, [ItemContent])
+    listToKV l = (key, values)
+      where
+        -- all the values on first elements are same
+        -- because groupBy result will be provided here.
+        key = (toLower . fst . Data.List.head) l
+        values = (reverseLengthSort . (fmap snd)) l
+    equalOnFirst = (==) `on` fst
     items :: [(B.ByteString, [ItemContent])]
     items = fmap listToKV groupedItems
 
 getCollection :: Request -> ReaderT AppState IO Response
 getCollection request = do
-  AppState {getMapRef=mapRef} <- ask
+  AppState {getMapRef=mapRef,
+            getConfig=Config{ defaultResultLimit=defaultLimit }} <- ask
   m <- liftIO $ STM.readTVarIO mapRef
 
   let maybeQuery :: Maybe [ItemContent]
@@ -58,7 +68,14 @@ getCollection request = do
         return $ (foldr (<>) []) $ fmap snd $ Trie.toList $ Trie.submap (toLower query) trie
 
   lift $ return $ case maybeQuery of
-    Just query -> responseLBS status200 [] (encode query)
+    Just query -> do
+      let maybeLimit :: Maybe Int
+          maybeLimit = do
+            maybeLimitBS <- Data.List.lookup "limit" (queryString request)
+            limitBS <- maybeLimitBS
+            (readMaybe . Text.unpack . decodeUtf8) limitBS
+          limit = fromMaybe defaultLimit maybeLimit
+      responseLBS status200 [] (encode (take limit query))
     Nothing -> responseLBS status404 [] "Not found"
   where
     name = Text.unlines (pathInfo request)
@@ -72,7 +89,7 @@ postCollection request = do
     lift $ case ((decode body)::Maybe [Item]) of
       Nothing -> return $ errorResponse "Error: Invalid request body."
       Just is -> do
-        let newMap = (Map.insert name (makeTrie is) m)
+        let newMap = (Map.insert name ( makeTrie is) m)
         STM.atomically$ STM.writeTVar mapRef newMap
         return noContent
   where

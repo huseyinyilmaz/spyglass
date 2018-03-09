@@ -14,11 +14,17 @@ import Utility
 -- import qualified Data.ByteString.Lazy.Char8 as C8
 --import Control.Monad.Trans
 import Control.Monad.Reader (ReaderT, runReaderT)
+
+getState :: Config -> IO AppState
+getState config = do
+  ref <- STM.newTVarIO Map.empty
+  return $ AppState ref config
+
+
 main :: IO ()
 main = do
   config <- Env.readConfig
-  ref <- STM.newTVarIO Map.empty
-  let appState = AppState ref config
+  appState <- getState config
   middlewares <- getMiddlewares config
   run (port config) (middlewares (getApp appState))
 

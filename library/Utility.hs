@@ -1,8 +1,4 @@
-module Utility (toLower,
-                noContent,
-                errorResponse,
-                notFoundResponse,
-                notAllowed) where
+module Utility where
 
 import Data.Text.Encoding (decodeUtf8)
 import Data.Text.Encoding (encodeUtf8)
@@ -11,7 +7,9 @@ import qualified Data.Text as Text
 import Network.Wai
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as LB
-
+import Data.List (sortBy)
+import Data.Function (on)
+import Types
 import Network.HTTP.Types.Status(created201,
                                  badRequest400,
                                  notFound404,
@@ -20,6 +18,16 @@ import Network.HTTP.Types.Status(created201,
 
 toLower :: B.ByteString -> B.ByteString
 toLower = encodeUtf8 . Text.toLower . decodeUtf8
+
+
+compareOnLength :: ItemContent -> ItemContent -> Ordering
+compareOnLength = (compare `on` (B.length . getItemContent))
+
+reverseSort:: Ord a => [a] -> [a]
+reverseSort = sortBy (flip compare)
+
+reverseLengthSort:: [ItemContent] -> [ItemContent]
+reverseLengthSort = sortBy (flip compareOnLength)
 
 noContent :: Response
 noContent = do
