@@ -73,7 +73,8 @@ executables:
     - -O2
 benchmarks:
   spyglass-benchmarks:
-    source-dirs: benchmark
+    source-dirs:
+      - benchmark/speed
     main: Main.hs
     dependencies:
     - base
