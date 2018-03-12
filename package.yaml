@@ -28,6 +28,7 @@ default-extensions:
   - RankNTypes
   - DuplicateRecordFields
   - GeneralizedNewtypeDeriving
+  - BangPatterns
 library:
   dependencies:
   - base
@@ -55,6 +56,8 @@ library:
   - hspec
   - hspec-wai
 
+  - criterion
+
 
   source-dirs: library
 
@@ -80,6 +83,11 @@ benchmarks:
     - base
     - spyglass
     - criterion
+    - wai
+    - wai-extra
+    - aeson
+    - bytestring
+
     ghc-options:
     - -rtsopts
     - -threaded

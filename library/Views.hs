@@ -29,7 +29,7 @@ import Text.Read(readMaybe)
 -- import Data.Ord (comparing)
 
 makeTrie :: [Item] -> Trie [ItemContent]
-makeTrie is = fromList items
+makeTrie is = trie
   where
     itemList :: [(B.ByteString, ItemContent)]
     itemList = do
@@ -50,7 +50,7 @@ makeTrie is = fromList items
     equalOnFirst = (==) `on` fst
     items :: [(B.ByteString, [ItemContent])]
     items = fmap listToKV groupedItems
-
+    !trie = fromList items
 getCollection :: Request -> ReaderT AppState IO Response
 getCollection request = do
   AppState {getMapRef=mapRef,
