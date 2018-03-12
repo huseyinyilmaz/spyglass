@@ -7,6 +7,7 @@ import Types
 import Network.Wai.Middleware.RequestLogger(logStdout, logStdoutDev)
 import Network.Wai (Middleware)
 import Network.Wai.Middleware.Gzip
+import Network.Wai.Middleware.Autohead
 
 getMonitoringMiddleware :: Config -> IO Middleware
 getMonitoringMiddleware config = do
@@ -45,4 +46,4 @@ getMiddlewares config = do
   logging <- getLoggingMiddleware config
   monitoring <- getMonitoringMiddleware config
   gz <- getGzipMiddleware config
-  return (gz . logging . monitoring)
+  return (gz . logging . autohead . monitoring)
