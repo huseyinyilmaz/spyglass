@@ -40,6 +40,14 @@ data Item = Item {
 instance ToJSON Item
 instance FromJSON Item
 
+data AuthUser = AuthUser {
+  username:: B.ByteString,
+  password:: B.ByteString
+  } deriving (Generic, Show, Eq)
+
+instance ToJSON AuthUser
+instance FromJSON AuthUser
+
 data Config = Config {
   port:: Int,
   callbacks:: [B.ByteString],
@@ -49,7 +57,8 @@ data Config = Config {
   monitoringPort:: Int,
   loggingEnabled:: Bool,
   loggingForDevelopment:: Bool,
-  defaultResultLimit:: Int
+  defaultResultLimit:: Int,
+  users :: [AuthUser]
   } deriving (Generic, Show, Eq)
 
 instance ToJSON Config
