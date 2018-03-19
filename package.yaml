@@ -55,6 +55,7 @@ library:
   - tasty-hspec
   - hspec
   - hspec-wai
+  - base64-bytestring
 
   - criterion
 
@@ -74,6 +75,7 @@ executables:
     - -with-rtsopts=-N
     - -with-rtsopts=-T
     - -O2
+
 benchmarks:
   spyglass-benchmarks:
     source-dirs:
@@ -98,14 +100,18 @@ tests:
     source-dirs: test-suite
     main: Main.hs
     dependencies:
+    - aeson
     - base
+    - base64-bytestring
+    - bytestring
+    - hspec
+    - hspec-wai
     - spyglass
     - tasty
     - tasty-hspec
-    - hspec
-    - hspec-wai
-    - aeson
     - wai
+    - wai-extra
+
     ghc-options:
     - -rtsopts
     - -threaded
