@@ -16,7 +16,7 @@ import GHC.Generics
 import Data.String(IsString)
 -- import Network.Wai
 -- import Control.Monad.Reader (ReaderT)
-import Data.Time(UTCTime)
+-- import Data.Time(UTCTime)
 -- Make bytestrig type usable by api.
 instance FromHttpApiData B.ByteString where
   parseUrlPiece = Right . encodeUtf8
