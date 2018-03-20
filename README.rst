@@ -1,6 +1,8 @@
 Spyglass autocomplete server (WIP)
 ==================================
 
+|build|_
+
 Spyglass is a autocomplete server that stores list of search terms and content and uses that data to provide an autocomplete backend.
 
 ::
@@ -13,3 +15,6 @@ Spyglass is a autocomplete server that stores list of search terms and content a
    [<object>]
    # Delete collection
    DELETE /<collection>/
+
+.. |build| image:: https://travis-ci.org/huseyinyilmaz/spyglass.png
+.. _build: https://travis-ci.org/huseyinyilmaz/spyglass
