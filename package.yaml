@@ -49,6 +49,7 @@ library:
   - yaml
   - ekg
   - wai-middleware-metrics
+  - time
 
   - aeson
   - tasty
