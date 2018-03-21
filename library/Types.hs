@@ -16,7 +16,7 @@ import GHC.Generics
 import Data.String(IsString)
 -- import Network.Wai
 -- import Control.Monad.Reader (ReaderT)
--- import Data.Time(UTCTime)
+import Data.Time(UTCTime)
 -- Make bytestrig type usable by api.
 instance FromHttpApiData B.ByteString where
   parseUrlPiece = Right . encodeUtf8
@@ -47,11 +47,15 @@ data AuthUser = AuthUser {
 
 instance ToJSON AuthUser
 instance FromJSON AuthUser
-data Collection = Collection {
+
+data Endpoint = Endpoint {
   url::B.ByteString,
-  timeout::Int,
-  content::Trie [ItemContent]
-  }
+  endOfLife::UTCTime}
+
+data Collection = Collection {
+  content::Trie [ItemContent],
+  endpoint::Maybe Endpoint}
+
 data Config = Config {
   port:: Int,
   callbacks:: [B.ByteString],
@@ -69,7 +73,7 @@ instance ToJSON Config
 instance FromJSON Config
 
 data AppState = AppState {
-  getMapRef::STM.TVar (Map Text (Trie [ItemContent])),
+  getMapRef::STM.TVar (Map Text Collection),
   getConfig::Config
 }
 

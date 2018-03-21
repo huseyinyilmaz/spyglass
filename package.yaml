@@ -117,3 +117,9 @@ tests:
     - -rtsopts
     - -threaded
     - -with-rtsopts=-N
+
+nix:
+  enable: false
+  packages:
+  - fcgi
+  - zlib

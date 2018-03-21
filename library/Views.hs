@@ -63,7 +63,7 @@ getCollection request = do
         maybeQ <- Data.List.lookup "query" (queryString request)
         query <- maybeQ
         -- Get path name from map
-        trie <- Map.lookup name m
+        Collection{content=trie} <- Map.lookup name m
         -- Get results from query
         return $ (foldr (<>) []) $ fmap snd $ Trie.toList $ Trie.submap (toLower query) trie
 
@@ -89,7 +89,11 @@ postCollection request = do
     lift $ case ((decode body)::Maybe [Item]) of
       Nothing -> return $ errorResponse "Error: Invalid request body."
       Just is -> do
-        let newMap = (Map.insert name ( makeTrie is) m)
+        let newCollection = Collection {
+              content=makeTrie is,
+              endpoint=Nothing}
+        let newMap = (Map.insert name newCollection m)
+
         STM.atomically$ STM.writeTVar mapRef newMap
         return noContent
   where
