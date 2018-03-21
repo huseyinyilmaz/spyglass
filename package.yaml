@@ -121,5 +121,5 @@ tests:
 nix:
   enable: false
   packages:
-  - fcgi
+  # - fcgi
   - zlib
