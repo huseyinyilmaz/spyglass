@@ -21,14 +21,14 @@ extra-source-files:
 ghc-options: -Wall
 
 default-extensions:
-  - OverloadedStrings
+  - BangPatterns
   - DeriveGeneric
+  - DuplicateRecordFields
   - FlexibleContexts
   - GADTs
-  - RankNTypes
-  - DuplicateRecordFields
   - GeneralizedNewtypeDeriving
-  - BangPatterns
+  - OverloadedStrings
+  - RankNTypes
 library:
   dependencies:
   - base
