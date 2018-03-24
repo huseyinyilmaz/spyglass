@@ -7,7 +7,7 @@ import Network.Wai
 import qualified Network.Wai.Test as WT
 import Server(getApp, getState)
 import Types(Config(..), AuthUser(..))
-import Collection(Item(..), PostCollectionBody(..))
+import Collection(RawItem(..), PostCollectionBody(..))
 import Middlewares
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
@@ -17,13 +17,13 @@ import Data.Monoid((<>))
 searchData :: PostCollectionBody
 searchData = PostCollectionBody {
   content=[
-  Item {term= "apple",   content= "apple content"},
-  Item {term= "apricot", content= "apricot content"},
-  Item {term= "cattle",  content= "cattle for content"},
-  Item {term= "orange",  content= "another orange content"},
-  Item {term= "amiddb",  content= "a middle b content"},
-  Item {term= "cmiddd",  content= "c middle d content"},
-  Item {term= "first second third forth",  content= "first second third forth content"}
+  RawItem {term= "apple",   content= "apple content"},
+  RawItem {term= "apricot", content= "apricot content"},
+  RawItem {term= "cattle",  content= "cattle for content"},
+  RawItem {term= "orange",  content= "another orange content"},
+  RawItem {term= "amiddb",  content= "a middle b content"},
+  RawItem {term= "cmiddd",  content= "c middle d content"},
+  RawItem {term= "first second third forth",  content= "first second third forth content"}
   ],
   endpoint=Nothing}
 

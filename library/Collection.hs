@@ -6,7 +6,8 @@ import Data.Time(UTCTime)
 import Data.Trie(Trie, fromList)
 import GHC.Generics(Generic)
 import Data.Function (on)
-
+import Data.Monoid ((<>))
+import qualified Data.Trie as Trie
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
@@ -24,12 +25,12 @@ instance Aeson.FromJSON Endpoint
 newtype ItemContent = ItemContent {getItemContent:: B.ByteString}
   deriving (Show, Generic, Aeson.ToJSON, Aeson.FromJSON, Eq, Monoid, IsString)
 
-data Item = Item {
+data RawItem = RawItem {
   term:: !B.ByteString,
   content:: !ItemContent } deriving (Show, Generic, Eq)
 
-instance Aeson.ToJSON Item
-instance Aeson.FromJSON Item
+instance Aeson.ToJSON RawItem
+instance Aeson.FromJSON RawItem
 
 data Collection = Collection {
   content::Trie [ItemContent],
@@ -37,7 +38,7 @@ data Collection = Collection {
 
 data PostCollectionBody = PostCollectionBody {
   endpoint:: Maybe Endpoint,
-  content :: [Item]
+  content :: [RawItem]
 
   } deriving (Show, Generic, Eq)
 
@@ -53,7 +54,7 @@ instance Ord ItemContent where
 -- reverseLengthSort:: [ItemContent] -> [ItemContent]
 -- reverseLengthSort = sortBy (flip compareOnLength)
 
-toCollection :: [Item] -> Collection
+toCollection :: [RawItem] -> Collection
 toCollection is = Collection c Nothing
   where
     c = makeTrie is
@@ -61,14 +62,21 @@ toCollection is = Collection c Nothing
 bodyToCollection :: PostCollectionBody -> Collection
 bodyToCollection PostCollectionBody{content=is} = toCollection is
 
-
-makeTrie :: [Item] -> Trie [ItemContent]
+lookup :: B.ByteString -> Collection -> [ItemContent]
+lookup rawQuery Collection{content=trie} = lookupFromTrie trie
+  where
+    query = toLower rawQuery
+    findSubmap = Trie.submap query
+    getValues = fmap snd
+    merge = foldr (<>) []
+    lookupFromTrie = merge . getValues . Trie.toList . findSubmap
+makeTrie :: [RawItem] -> Trie [ItemContent]
 makeTrie is = trie
   where
     itemList :: [(B.ByteString, ItemContent)]
     itemList = do
       i <- is
-      let Item{term=t, content=c} = i
+      let RawItem{term=t, content=c} = i
       -- t <- C8.words (term i)
       tt <- C8.tails t
       return (tt, c)

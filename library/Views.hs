@@ -4,54 +4,48 @@ module Views(getCollection,
 
 import qualified Data.Text as Text
 import Data.Text.Encoding (decodeUtf8)
--- import Data.Text.Encoding (encodeUtf8)
-import Types
--- import Control.Monad.IO.Class (MonadIO)
-import Data.Monoid
-
--- import Control.Monad.Trans
 import qualified Control.Concurrent.STM as STM
 import Control.Monad.IO.Class(liftIO)
 import qualified Data.Map.Strict as Map
-import Utility(toLower, noContent, errorResponse)
-import Data.Trie as Trie
-import Data.List (lookup)
+import Utility(noContent, errorResponse)
+import qualified Data.List
 import Data.Maybe (fromMaybe)
 import Network.HTTP.Types.Status(status200, status404)
 import qualified Data.ByteString.Lazy.Char8 as LC8
 import Network.Wai
+import Control.Monad(join)
 import Control.Monad.Reader
 import Data.Aeson(decode, encode)
 import Text.Read(readMaybe)
 import Control.Concurrent(forkIO)
 
-import Collection(ItemContent, Collection(..), bodyToCollection, PostCollectionBody(..))
+import Collection(ItemContent, bodyToCollection, PostCollectionBody(..), lookup)
+import Types
+--import State(AppState(..), AppStateT)
+import State(AppState(..))
 
+--getCollection :: Request -> AppStateT IO Response
 getCollection :: Request -> ReaderT AppState IO Response
 getCollection request = do
   AppState {getMapRef=mapRef,
             getConfig=Config{ defaultResultLimit=defaultLimit }} <- ask
   m <- liftIO $ STM.readTVarIO mapRef
 
-  let maybeQuery :: Maybe [ItemContent]
-      maybeQuery = do
-        -- Get query string from params
-        maybeQ <- Data.List.lookup "query" (queryString request)
-        query <- maybeQ
-        -- Get path name from map
-        Collection{content=trie} <- Map.lookup name m
-        -- Get results from query
-        return $ (foldr (<>) []) $ fmap snd $ Trie.toList $ Trie.submap (toLower query) trie
+  let maybeResult :: Maybe [ItemContent]
+      maybeResult = do
+        query <- join $ Data.List.lookup "query" (queryString request)
+        c <- Map.lookup name m
+        return $ Collection.lookup query c
 
-  lift $ case maybeQuery of
-    Just query -> do
+  lift $ case maybeResult of
+    Just result -> do
       let maybeLimit :: Maybe Int
           maybeLimit = do
             maybeLimitBS <- Data.List.lookup "limit" (queryString request)
             limitBS <- maybeLimitBS
             (readMaybe . Text.unpack . decodeUtf8) limitBS
           limit = fromMaybe defaultLimit maybeLimit
-      return (responseLBS status200 [] (encode (take limit query)))
+      return (responseLBS status200 [] (encode (take limit result)))
     Nothing -> do
       _ <- forkIO (putStrLn "test")
       return (responseLBS status404 [] "Not Found")
