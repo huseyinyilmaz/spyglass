@@ -22,11 +22,9 @@ import Control.Concurrent(forkIO)
 import Collection(ItemContent, bodyToCollection, PostCollectionBody(..), lookup)
 import Types
 --import State(AppState(..), AppStateT)
-import State(AppState(..), AppT(..))
+import State(AppState(..), AppM(..))
 
-import Debug.Trace(traceIO, trace)
-
-getCollection :: Request -> AppT Response
+getCollection :: Request -> AppM Response
 --getCollection :: Request -> ReaderT AppState IO Response
 getCollection request = do
   AppState {getMapRef=mapRef,
@@ -49,26 +47,24 @@ getCollection request = do
           limit = fromMaybe defaultLimit maybeLimit
       return (responseLBS status200 [] (encode (take limit result)))
     Nothing -> do
-      _ <- return $ forkIO (do
-                               traceIO "We are here!!!!"
-                               putStrLn "test")
+      _ <- return $ forkIO (putStrLn "test")
       return (responseLBS status404 [] "Not Found")
   where
     name = Text.unlines (pathInfo request)
 
 --postCollection :: Request -> ReaderT AppState IO Response
-postCollection :: Request -> AppT Response
+postCollection :: Request -> AppM Response
 postCollection request = do
-  AppState {getMapRef=mapRef} <- (trace "XXXX") $ ask
-  m <- (trace "XXXX-m") $ liftIO $ STM.readTVarIO mapRef
-  body <- (trace "XXXX-body") $ liftIO $ strictRequestBody request
+  AppState {getMapRef=mapRef} <- ask
+  m <- liftIO $ STM.readTVarIO mapRef
+  body <- liftIO $ strictRequestBody request
 
   case ((decode body)::Maybe PostCollectionBody) of
-    Nothing -> (trace "XXXX-1") $ return $ errorResponse "Error: Invalid request body."
+    Nothing -> return $ errorResponse "Error: Invalid request body."
     Just postCollectionBody -> do
-      let newCollection = (trace "XXXX-newCollection") $ bodyToCollection postCollectionBody
-      let newMap = (trace "XXXX-newMap") $ (Map.insert name newCollection m)
-      liftIO $ STM.atomically $ STM.writeTVar mapRef $ (trace "XXXX liftIO") newMap
+      let newCollection = bodyToCollection postCollectionBody
+      let newMap = Map.insert name newCollection m
+      liftIO $ STM.atomically $ STM.writeTVar mapRef newMap
       return noContent
   where
     name = Text.unlines (pathInfo request)
