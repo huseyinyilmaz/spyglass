@@ -15,6 +15,4 @@ data AppState = AppState {
 newtype AppM a
     = AppM
     { unAppM :: ReaderT AppState IO a
-    } deriving (Functor, Applicative, Monad, MonadIO)
-
-instance MonadReader AppState AppM
+    } deriving (Functor, Applicative, Monad, MonadIO, MonadReader AppState)
