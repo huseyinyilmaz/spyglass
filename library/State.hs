@@ -12,7 +12,7 @@ data AppState = AppState {
   getConfig::Config
 }
 
-newtype AppStateT m a
-    = AppStateT
-    { unAppT :: ReaderT AppState m a
-    } deriving (Functor, Applicative, Monad, MonadIO, MonadTrans)
+newtype AppM a
+    = AppM
+    { unAppM :: ReaderT AppState IO a
+    } deriving (Functor, Applicative, Monad, MonadIO, MonadReader AppState)

@@ -29,6 +29,7 @@ default-extensions:
   - GeneralizedNewtypeDeriving
   - OverloadedStrings
   - RankNTypes
+  - MultiParamTypeClasses
 library:
   dependencies:
   - base

@@ -10,7 +10,7 @@ import qualified Views as Views
 import qualified Env as Env
 import Middlewares
 import Utility
-import State(AppState(..))
+import State(AppState(..), AppM(..))
 -- import Network.HTTP.Types.Status(status200)
 -- import qualified Data.ByteString.Lazy.Char8 as C8
 --import Control.Monad.Trans
@@ -41,7 +41,7 @@ getApp config request respond = do
 router :: Request -> ReaderT AppState IO Response
 router request = do
   case requestMethod request of
-    "GET" -> Views.getCollection request
-    "POST" -> Views.postCollection request
+    "GET" -> unAppM $ Views.getCollection request
+    "POST" -> unAppM $ Views.postCollection request
     _ -> return notAllowed
 --(respond $ responseLBS status200 [] ((C8.pack . show) request))

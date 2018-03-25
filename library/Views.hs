@@ -22,10 +22,10 @@ import Control.Concurrent(forkIO)
 import Collection(ItemContent, bodyToCollection, PostCollectionBody(..), lookup)
 import Types
 --import State(AppState(..), AppStateT)
-import State(AppState(..))
+import State(AppState(..), AppM(..))
 
---getCollection :: Request -> AppStateT IO Response
-getCollection :: Request -> ReaderT AppState IO Response
+getCollection :: Request -> AppM Response
+--getCollection :: Request -> ReaderT AppState IO Response
 getCollection request = do
   AppState {getMapRef=mapRef,
             getConfig=Config{ defaultResultLimit=defaultLimit }} <- ask
@@ -37,7 +37,7 @@ getCollection request = do
         c <- Map.lookup name m
         return $ Collection.lookup query c
 
-  lift $ case maybeResult of
+  case maybeResult of
     Just result -> do
       let maybeLimit :: Maybe Int
           maybeLimit = do
@@ -47,25 +47,25 @@ getCollection request = do
           limit = fromMaybe defaultLimit maybeLimit
       return (responseLBS status200 [] (encode (take limit result)))
     Nothing -> do
-      _ <- forkIO (putStrLn "test")
+      _ <- return $ forkIO (putStrLn "test")
       return (responseLBS status404 [] "Not Found")
   where
     name = Text.unlines (pathInfo request)
 
-postCollection :: Request -> ReaderT AppState IO Response
+--postCollection :: Request -> ReaderT AppState IO Response
+postCollection :: Request -> AppM Response
 postCollection request = do
   AppState {getMapRef=mapRef} <- ask
-  do
-    m <- liftIO $ STM.readTVarIO mapRef
-    body <- liftIO $ strictRequestBody request
-    lift $ case ((decode body)::Maybe PostCollectionBody) of
-      Nothing -> return $ errorResponse "Error: Invalid request body."
-      Just postCollectionBody -> do
-        let newCollection = bodyToCollection postCollectionBody
-        let newMap = (Map.insert name newCollection m)
+  m <- liftIO $ STM.readTVarIO mapRef
+  body <- liftIO $ strictRequestBody request
 
-        STM.atomically$ STM.writeTVar mapRef newMap
-        return noContent
+  case ((decode body)::Maybe PostCollectionBody) of
+    Nothing -> return $ errorResponse "Error: Invalid request body."
+    Just postCollectionBody -> do
+      let newCollection = bodyToCollection postCollectionBody
+      let newMap = Map.insert name newCollection m
+      liftIO $ STM.atomically $ STM.writeTVar mapRef newMap
+      return noContent
   where
     name = Text.unlines (pathInfo request)
 
