@@ -8,8 +8,8 @@ import Types(Config)
 import Control.Monad.Reader
 
 data AppState = AppState {
-  getMapRef::STM.TVar (Map Text Collection),
-  getConfig::Config
+  _mapRef::STM.TVar (Map Text Collection),
+  _config::Config
 }
 
 newtype AppM a

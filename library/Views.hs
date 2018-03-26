@@ -27,8 +27,8 @@ import State(AppState(..), AppM(..))
 getCollection :: Request -> AppM Response
 --getCollection :: Request -> ReaderT AppState IO Response
 getCollection request = do
-  AppState {getMapRef=mapRef,
-            getConfig=Config{ defaultResultLimit=defaultLimit }} <- ask
+  AppState {_mapRef=mapRef,
+            _config=Config{ defaultResultLimit=defaultLimit }} <- ask
   m <- liftIO $ STM.readTVarIO mapRef
 
   let maybeResult :: Maybe [ItemContent]
