@@ -55,7 +55,7 @@ getCollection request = do
 --postCollection :: Request -> ReaderT AppState IO Response
 postCollection :: Request -> AppM Response
 postCollection request = do
-  AppState {getMapRef=mapRef} <- ask
+  AppState {_mapRef=mapRef} <- ask
   m <- liftIO $ STM.readTVarIO mapRef
   body <- liftIO $ strictRequestBody request
 
