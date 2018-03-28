@@ -25,6 +25,13 @@ instance Aeson.FromJSON Endpoint
 newtype ItemContent = ItemContent {getItemContent:: B.ByteString}
   deriving (Show, Generic, Aeson.ToJSON, Aeson.FromJSON, Eq, Monoid, IsString)
 
+data SearchType = Infix | Prefix
+
+data Term = Term {
+  searchType :: SearchType,
+  term :: !B.ByteString
+  }
+
 data RawItem = RawItem {
   term:: !B.ByteString,
   content:: !ItemContent } deriving (Show, Generic, Eq)
