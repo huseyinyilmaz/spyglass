@@ -24,6 +24,7 @@ getState config = do
 
 main :: IO ()
 main = do
+  putStrLn getTitle
   config <- Env.readConfig
   appState <- getState config
   middlewares <- getMiddlewares config

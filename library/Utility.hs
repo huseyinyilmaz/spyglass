@@ -12,6 +12,7 @@ import Network.HTTP.Types.Status(created201,
                                  badRequest400,
                                  notFound404,
                                  methodNotAllowed405)
+import Data.Monoid((<>))
 
 toLower :: B.ByteString -> B.ByteString
 toLower = encodeUtf8 . Text.toLower . decodeUtf8
@@ -35,3 +36,13 @@ errorResponse e = do
 notFoundResponse :: LB.ByteString -> Response
 notFoundResponse e = do
   responseLBS notFound404 [] e
+
+
+getTitle::String
+getTitle = foldr1 (<>) [
+  "                           __               ",
+  "   _________  __  ______ _/ /___ ___________",
+  "  / ___/ __ \\/ / / / __ `/ / __ `/ ___/ ___/",
+  " (__  ) /_/ / /_/ / /_/ / / /_/ (__  |__  ) ",
+  "/____/ .___/\\__, /\\__, /_/\\__,_/____/____/  ",
+  "    /_/    /____//____/                     "]
