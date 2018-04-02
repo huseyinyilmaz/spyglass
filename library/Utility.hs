@@ -12,6 +12,9 @@ import Network.HTTP.Types.Status(created201,
                                  badRequest400,
                                  notFound404,
                                  methodNotAllowed405)
+import qualified Network.HTTP as HTTP
+import Network.URI ( parseURI )
+
 import Data.Monoid((<>))
 
 toLower :: B.ByteString -> B.ByteString
@@ -40,9 +43,17 @@ notFoundResponse e = do
 
 getTitle::String
 getTitle = foldr1 (<>) [
-  "                           __               ",
-  "   _________  __  ______ _/ /___ ___________",
-  "  / ___/ __ \\/ / / / __ `/ / __ `/ ___/ ___/",
-  " (__  ) /_/ / /_/ / /_/ / / /_/ (__  |__  ) ",
-  "/____/ .___/\\__, /\\__, /_/\\__,_/____/____/  ",
-  "    /_/    /____//____/                     "]
+  "                               __                \n",
+  "       _________  __  ______ _/ /___ ___________ \n",
+  "      / ___/ __ \\/ / / / __ `/ / __ `/ ___/ ___/\n",
+  "     (__  ) /_/ / /_/ / /_/ / / /_/ (__  |__  )  \n",
+  "    /____/ .___/\\__, /\\__, /_/\\__,_/____/____/\n ",
+  "       /_/    /____//____/                      \n"]
+
+getLazyRequest
+    :: String                   -- ^URL to fetch
+    -> HTTP.Request LB.ByteString  -- ^The constructed request
+getLazyRequest urlString =
+  case parseURI urlString of
+    Nothing -> error ("getLazyRequest: Not a valid URL - " ++ urlString)
+    Just u  -> HTTP.mkRequest HTTP.GET u

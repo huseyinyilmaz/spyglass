@@ -4,13 +4,14 @@ import System.Remote.Monitoring
 import Network.Wai
 import Network.Wai.Metrics
 import Data.Monoid((<>))
-import Types
 import Network.Wai.Middleware.RequestLogger(logStdout, logStdoutDev)
 import Network.Wai (Middleware)
 import Network.Wai.Middleware.Gzip
 import Network.Wai.Middleware.Autohead
 import Network.Wai.Middleware.HttpAuth
 
+--import Types
+import Env(Config(..), AuthUser(..))
 getMonitoringMiddleware :: Config -> IO Middleware
 getMonitoringMiddleware config = do
   if (monitoringEnabled config) then do

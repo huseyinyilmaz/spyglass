@@ -7,6 +7,9 @@ import qualified Data.ByteString as B
 import Data.Text.Encoding(encodeUtf8, decodeUtf8)
 import Control.Monad(mzero)
 import Web.HttpApiData (FromHttpApiData(..))
+-- import GHC.Generics
+-- import qualified Data.Aeson as Aeson
+-- import Data.String(IsString)
 
 -- Make bytestrig type usable by api.
 instance FromHttpApiData B.ByteString where

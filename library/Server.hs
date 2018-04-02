@@ -5,7 +5,8 @@ import Network.Wai.Handler.Warp (run)
 
 import qualified Control.Concurrent.STM as STM
 import qualified Data.Map.Strict as Map
-import Types
+--import Types
+import Env(Config(..))
 import qualified Views as Views
 import qualified Env as Env
 import Middlewares

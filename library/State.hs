@@ -4,7 +4,7 @@ import Data.Map.Strict(Map)
 import qualified Control.Concurrent.STM as STM
 
 import Collection(Collection)
-import Types(Config)
+import Env(Config)
 import Control.Monad.Reader
 
 data AppState = AppState {

@@ -1,30 +1,15 @@
 module Types where
 
 import qualified Data.ByteString as B
-import Data.Aeson
+import qualified Data.Aeson as Aeson
 import GHC.Generics
+import Data.String(IsString)
+import Data.Function (on)
+
 import Common()
 
-data AuthUser = AuthUser {
-  username:: B.ByteString,
-  password:: B.ByteString
-  } deriving (Generic, Show, Eq)
+newtype ItemContent = ItemContent {getItemContent:: B.ByteString}
+  deriving (Show, Generic, Aeson.ToJSON, Aeson.FromJSON, Eq, Monoid, IsString)
 
-instance ToJSON AuthUser
-instance FromJSON AuthUser
-
-data Config = Config {
-  port:: Int,
-  callbacks:: [B.ByteString],
-  gzipEnabled:: Bool,
-  monitoringEnabled:: Bool,
-  monitoringIP:: B.ByteString,
-  monitoringPort:: Int,
-  loggingEnabled:: Bool,
-  loggingForDevelopment:: Bool,
-  defaultResultLimit:: Int,
-  users :: [AuthUser]
-  } deriving (Generic, Show, Eq)
-
-instance ToJSON Config
-instance FromJSON Config
+instance Ord ItemContent where
+  compare = (compare `on` (B.length . getItemContent))

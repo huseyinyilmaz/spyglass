@@ -1,7 +1,7 @@
 module Collection where
 
 import Data.List (groupBy, head, sort)
-import Data.String(IsString)
+--import Data.String(IsString)
 import Data.Time(UTCTime)
 import Data.Trie(Trie, fromList)
 import GHC.Generics(Generic)
@@ -11,63 +11,42 @@ import qualified Data.Trie as Trie
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
+import qualified Data.ByteString.Lazy as LB
+import Network.HTTP
 
 import Utility(reverseSort, toLower)
+import Types(ItemContent(..))
 import Common()
+import Utility
+import Request(Term(..), PostRequest(..))
 
 data Endpoint = Endpoint {
-  url::B.ByteString,
-  endOfLife::UTCTime} deriving(Show, Eq, Generic)
+  url::B.ByteString, -- Endpoint url
+  timeout::Integer,  -- Lifetime of data in seconds.
+  endOfLife::UTCTime -- End of life time.
+  } deriving(Show, Eq, Generic)
 
 instance Aeson.ToJSON Endpoint
 instance Aeson.FromJSON Endpoint
-
-newtype ItemContent = ItemContent {getItemContent:: B.ByteString}
-  deriving (Show, Generic, Aeson.ToJSON, Aeson.FromJSON, Eq, Monoid, IsString)
-
-data SearchType = Infix | Prefix
-
-data Term = Term {
-  searchType :: SearchType,
-  term :: !B.ByteString
-  }
-
-data RawItem = RawItem {
-  term:: !B.ByteString,
-  content:: !ItemContent } deriving (Show, Generic, Eq)
-
-instance Aeson.ToJSON RawItem
-instance Aeson.FromJSON RawItem
 
 data Collection = Collection {
   content::Trie [ItemContent],
   endpoint::Maybe Endpoint }
 
-data PostCollectionBody = PostCollectionBody {
-  endpoint:: Maybe Endpoint,
-  content :: [RawItem]
-
-  } deriving (Show, Generic, Eq)
-
-instance Aeson.ToJSON PostCollectionBody
-instance Aeson.FromJSON PostCollectionBody
-
-instance Ord ItemContent where
-  compare = (compare `on` (B.length . getItemContent))
-
--- compareOnLength :: ItemContent -> ItemContent -> Ordering
--- compareOnLength = (compare `on` (B.length . getItemContent))
-
--- reverseLengthSort:: [ItemContent] -> [ItemContent]
--- reverseLengthSort = sortBy (flip compareOnLength)
-
-toCollection :: [RawItem] -> Collection
+toCollection :: [Term] -> Collection
 toCollection is = Collection c Nothing
   where
     c = makeTrie is
 
-bodyToCollection :: PostCollectionBody -> Collection
-bodyToCollection PostCollectionBody{content=is} = toCollection is
+bodyToCollection :: PostRequest -> IO Collection
+bodyToCollection PostDataRequest{values=is} = return (toCollection is)
+bodyToCollection PostEndpointRequest{timeout=t, endpoint=u} = do
+  response <- simpleHTTP (getLazyRequest (C8.unpack u))
+  body <- getResponseBody response
+  case Aeson.decode body of
+    Just pr -> bodyToCollection pr --TODO add endpoint data.
+    Nothing -> error "Could not parse response"
+
 
 lookup :: B.ByteString -> Collection -> [ItemContent]
 lookup rawQuery Collection{content=trie} = lookupFromTrie trie
@@ -77,13 +56,14 @@ lookup rawQuery Collection{content=trie} = lookupFromTrie trie
     getValues = fmap snd
     merge = foldr (<>) []
     lookupFromTrie = merge . getValues . Trie.toList . findSubmap
-makeTrie :: [RawItem] -> Trie [ItemContent]
+
+makeTrie :: [Term] -> Trie [ItemContent]
 makeTrie is = trie
   where
     itemList :: [(B.ByteString, ItemContent)]
     itemList = do
       i <- is
-      let RawItem{term=t, content=c} = i
+      let Term{term=t, value=c} = i
       -- t <- C8.words (term i)
       tt <- C8.tails t
       return (tt, c)

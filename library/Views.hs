@@ -19,11 +19,12 @@ import Data.Aeson(decode, encode)
 import Text.Read(readMaybe)
 import Control.Concurrent(forkIO)
 
-import Collection(ItemContent, bodyToCollection, PostCollectionBody(..), lookup)
-import Types
+import Collection(bodyToCollection, lookup)
+import Request(PostRequest(..))
+import Types(ItemContent(..))
 --import State(AppState(..), AppStateT)
 import State(AppState(..), AppM(..))
-
+import Env(Config(..))
 getCollection :: Request -> AppM Response
 --getCollection :: Request -> ReaderT AppState IO Response
 getCollection request = do
@@ -59,10 +60,10 @@ postCollection request = do
   m <- liftIO $ STM.readTVarIO mapRef
   body <- liftIO $ strictRequestBody request
 
-  case ((decode body)::Maybe PostCollectionBody) of
+  case ((decode body)::Maybe PostRequest) of
     Nothing -> return $ errorResponse "Error: Invalid request body."
     Just postCollectionBody -> do
-      let newCollection = bodyToCollection postCollectionBody
+      newCollection <- liftIO $ bodyToCollection postCollectionBody
       let newMap = Map.insert name newCollection m
       liftIO $ STM.atomically $ STM.writeTVar mapRef newMap
       return noContent

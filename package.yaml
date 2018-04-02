@@ -51,8 +51,9 @@ library:
   - ekg
   - wai-middleware-metrics
   - time
+  - HTTP
+  - network-uri
 
-  - aeson
   - tasty
   - tasty-hspec
   - hspec
