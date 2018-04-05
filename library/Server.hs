@@ -5,6 +5,8 @@ import Network.Wai.Handler.Warp (run)
 
 import qualified Control.Concurrent.STM as STM
 import qualified Data.Map.Strict as Map
+import Data.Monoid((<>))
+
 --import Types
 import Env(Config(..))
 import qualified Views as Views
@@ -27,6 +29,7 @@ main :: IO ()
 main = do
   putStrLn getTitle
   config <- Env.readConfig
+  putStrLn ("Server is listening at 0.0.0.0:" <> (show (port config)))
   appState <- getState config
   middlewares <- getMiddlewares config
   run (port config) (middlewares (getApp appState))

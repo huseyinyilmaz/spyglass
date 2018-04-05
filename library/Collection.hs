@@ -7,12 +7,16 @@ import Data.Trie(Trie, fromList)
 import GHC.Generics(Generic)
 import Data.Function (on)
 import Data.Monoid ((<>))
+import Data.Time.Clock(getCurrentTime,
+                       addUTCTime)
+import Data.Maybe(fromMaybe)
+
+import Network.HTTP
 import qualified Data.Trie as Trie
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
-import qualified Data.ByteString.Lazy as LB
-import Network.HTTP
+-- import qualified Data.ByteString.Lazy as LB
 
 import Utility(reverseSort, toLower)
 import Types(ItemContent(..))
@@ -44,9 +48,17 @@ bodyToCollection PostEndpointRequest{timeout=t, endpoint=u} = do
   response <- simpleHTTP (getLazyRequest (C8.unpack u))
   body <- getResponseBody response
   case Aeson.decode body of
-    Just pr -> bodyToCollection pr --TODO add endpoint data.
+    Just pr -> do
+      now <- getCurrentTime
+      collection <- bodyToCollection pr
+      let c :: Collection
+          c = collection{ endpoint=Just $ Endpoint{url=u,
+                                                   timeout=to,
+                                                   endOfLife=addUTCTime (fromInteger to) now}}
+      return c
     Nothing -> error "Could not parse response"
-
+  where
+    to = fromMaybe (60 * 60) t -- default timeout is one hour
 
 lookup :: B.ByteString -> Collection -> [ItemContent]
 lookup rawQuery Collection{content=trie} = lookupFromTrie trie
@@ -70,12 +82,12 @@ makeTrie is = trie
     groupedItems = groupBy equalOnFirst (sort itemList)
 
     listToKV::[(B.ByteString, ItemContent)] -> (B.ByteString, [ItemContent])
-    listToKV l = (key, values)
+    listToKV l = (key, vs)
       where
         -- all the values on first elements are same
         -- because groupBy result will be provided here.
         key = (toLower . fst . Data.List.head) l
-        values = (reverseSort . (fmap snd)) l
+        vs = (reverseSort . (fmap snd)) l
     equalOnFirst = (==) `on` fst
     items :: [(B.ByteString, [ItemContent])]
     items = fmap listToKV groupedItems
