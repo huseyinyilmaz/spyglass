@@ -15,7 +15,8 @@ import qualified Data.ByteString.Lazy.Char8 as LC8
 import Network.Wai
 import Control.Monad(join)
 import Control.Monad.Reader
-import Data.Aeson(decode, encode)
+import Data.Monoid((<>))
+import Data.Aeson(decode, encode, eitherDecode)
 import Text.Read(readMaybe)
 import Control.Concurrent(forkIO)
 
@@ -60,9 +61,9 @@ postCollection request = do
   m <- liftIO $ STM.readTVarIO mapRef
   body <- liftIO $ strictRequestBody request
 
-  case ((decode body)::Maybe PostRequest) of
-    Nothing -> return $ errorResponse "Error: Invalid request body."
-    Just postCollectionBody -> do
+  case ((eitherDecode body)::Either String PostRequest) of
+    Left e -> return $ errorResponse ("Error: Invalid request body." <> (LC8.pack e))
+    Right postCollectionBody -> do
       newCollection <- liftIO $ bodyToCollection postCollectionBody
       let newMap = Map.insert name newCollection m
       liftIO $ STM.atomically $ STM.writeTVar mapRef newMap

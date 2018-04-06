@@ -3,8 +3,9 @@ module Request where
 import qualified Data.ByteString as B
 import GHC.Generics(Generic)
 import qualified Data.Aeson as Aeson
-import Types(ItemContent)
+import Types(ItemContent, untagged)
 import Common()
+import Data.Aeson
 
 data IndexType = Infix | Prefix deriving (Show, Eq, Generic)
 
@@ -29,5 +30,11 @@ instance Aeson.ToJSON IndexType
 instance Aeson.FromJSON IndexType
 instance Aeson.ToJSON Term
 instance Aeson.FromJSON Term
-instance Aeson.ToJSON PostRequest
-instance Aeson.FromJSON PostRequest
+-- instance Aeson.ToJSON PostRequest
+-- instance Aeson.FromJSON PostRequest
+
+instance Aeson.ToJSON PostRequest where
+  toJSON = genericToJSON untagged
+
+instance FromJSON PostRequest where
+  parseJSON = genericParseJSON untagged

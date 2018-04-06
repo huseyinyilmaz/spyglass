@@ -5,7 +5,7 @@ import qualified Data.Aeson as Aeson
 import GHC.Generics
 import Data.String(IsString)
 import Data.Function (on)
-
+import Data.Aeson
 import Common()
 
 newtype ItemContent = ItemContent {getItemContent:: B.ByteString}
@@ -13,3 +13,6 @@ newtype ItemContent = ItemContent {getItemContent:: B.ByteString}
 
 instance Ord ItemContent where
   compare = (compare `on` (B.length . getItemContent))
+
+untagged :: Options
+untagged = defaultOptions { sumEncoding = UntaggedValue }
