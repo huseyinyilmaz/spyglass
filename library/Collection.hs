@@ -25,17 +25,17 @@ import Utility
 import Request(Term(..), PostRequest(..))
 
 data Endpoint = Endpoint {
-  url::B.ByteString, -- Endpoint url
-  timeout::Integer,  -- Lifetime of data in seconds.
-  endOfLife::UTCTime -- End of life time.
+  _endpointUrl::B.ByteString, -- Endpoint url
+  _endpointTimeout::Integer,  -- Lifetime of data in seconds.
+  _endpointEndOfLife::UTCTime -- End of life time.
   } deriving(Show, Eq, Generic)
 
 instance Aeson.ToJSON Endpoint
 instance Aeson.FromJSON Endpoint
 
 data Collection = Collection {
-  content::Trie [ItemContent],
-  endpoint::Maybe Endpoint }
+  _collectionContent::Trie [ItemContent],
+  _collectionEndpoint::Maybe Endpoint }
 
 toCollection :: [Term] -> Collection
 toCollection is = Collection c Nothing
@@ -52,16 +52,23 @@ bodyToCollection PostEndpointRequest{timeout=t, endpoint=u} = do
       now <- getCurrentTime
       collection <- bodyToCollection pr
       let c :: Collection
-          c = collection{ endpoint=Just $ Endpoint{url=u,
-                                                   timeout=to,
-                                                   endOfLife=addUTCTime (fromInteger to) now}}
+          c = collection{ _collectionEndpoint=Just $ Endpoint{_endpointUrl=u,
+                                                              _endpointTimeout=to,
+                                                              _endpointEndOfLife=addUTCTime (fromInteger to) now}}
       return c
     Nothing -> error "Could not parse response"
   where
     to = fromMaybe (60 * 60) t -- default timeout is one hour
 
+isValid :: Collection -> IO Bool
+isValid c = do
+  now <- getCurrentTime
+  case _collectionEndpoint c of
+    Just Endpoint{_endpointEndOfLife=eol} -> return $ now < eol
+    Nothing -> return True
+
 lookup :: B.ByteString -> Collection -> [ItemContent]
-lookup rawQuery Collection{content=trie} = lookupFromTrie trie
+lookup rawQuery Collection{_collectionContent=trie} = lookupFromTrie trie
   where
     query = toLower rawQuery
     findSubmap = Trie.submap query
