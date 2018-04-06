@@ -49,6 +49,7 @@ getCollection request = do
           limit = fromMaybe defaultLimit maybeLimit
       return (responseLBS status200 [] (encode (take limit result)))
     Nothing -> do
+      _ <- return (putStrLn "XXX")
       _ <- return $ forkIO (putStrLn "test")
       return (responseLBS status404 [] "Not Found")
   where
