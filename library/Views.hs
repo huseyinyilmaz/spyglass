@@ -16,16 +16,20 @@ import Network.Wai
 import Control.Monad(join)
 import Control.Monad.Reader
 import Data.Monoid((<>))
-import Data.Aeson(decode, encode, eitherDecode)
+import Data.Aeson(encode, eitherDecode)
 import Text.Read(readMaybe)
 import Control.Concurrent(forkIO)
+import Control.Concurrent(threadDelay)
 
-import Collection(bodyToCollection, lookup)
+import Collection(bodyToCollection,
+                  lookup)
 import Request(PostRequest(..))
 import Types(ItemContent(..))
 --import State(AppState(..), AppStateT)
 import State(AppState(..), AppM(..))
 import Env(Config(..))
+
+
 getCollection :: Request -> AppM Response
 --getCollection :: Request -> ReaderT AppState IO Response
 getCollection request = do
@@ -33,25 +37,29 @@ getCollection request = do
             _config=Config{ defaultResultLimit=defaultLimit }} <- ask
   m <- liftIO $ STM.readTVarIO mapRef
 
-  let maybeResult :: Maybe [ItemContent]
-      maybeResult = do
-        query <- join $ Data.List.lookup "query" (queryString request)
-        c <- Map.lookup name m
-        return $ Collection.lookup query c
+  case Map.lookup name m of
+    Nothing -> return (responseLBS status404 [] "Collection Does Not Exist!")
 
-  case maybeResult of
-    Just result -> do
-      let maybeLimit :: Maybe Int
-          maybeLimit = do
-            maybeLimitBS <- Data.List.lookup "limit" (queryString request)
-            limitBS <- maybeLimitBS
-            (readMaybe . Text.unpack . decodeUtf8) limitBS
-          limit = fromMaybe defaultLimit maybeLimit
-      return (responseLBS status200 [] (encode (take limit result)))
-    Nothing -> do
-      _ <- return (putStrLn "XXX")
-      _ <- return $ forkIO (putStrLn "test")
-      return (responseLBS status404 [] "Not Found")
+    Just c -> do
+      let maybeResult :: Maybe [ItemContent]
+          maybeResult = do
+            query <- join $ Data.List.lookup "query" (queryString request)
+            return $ Collection.lookup query c
+
+      case maybeResult of
+        Just result -> do
+          let maybeLimit :: Maybe Int
+              maybeLimit = do
+                maybeLimitBS <- Data.List.lookup "limit" (queryString request)
+                limitBS <- maybeLimitBS
+                (readMaybe . Text.unpack . decodeUtf8) limitBS
+              limit = fromMaybe defaultLimit maybeLimit
+          return (responseLBS status200 [] (encode (take limit result)))
+        Nothing -> do
+          _ <- liftIO $ forkIO $ do
+            threadDelay (1000 * 1000 * 10)
+            putStrLn "test"
+          return (responseLBS status404 [] "Not Found")
   where
     name = Text.unlines (pathInfo request)
 
