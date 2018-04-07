@@ -1,14 +1,13 @@
 module State where
-import Data.Text (Text)
 import Data.Map.Strict(Map)
 import qualified Control.Concurrent.STM as STM
-
+import qualified Data.ByteString as B
 import Collection(Collection)
 import Env(Config)
 import Control.Monad.Reader
 
 data AppState = AppState {
-  _mapRef::STM.TVar (Map Text Collection),
+  _mapRef::STM.TVar (Map B.ByteString Collection),
   _config::Config
 }
 

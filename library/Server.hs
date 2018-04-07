@@ -45,8 +45,10 @@ getApp config request respond = do
 
 router :: Request -> ReaderT AppState IO Response
 router request = do
-  case requestMethod request of
-    "GET" -> unAppM $ Views.getCollection request
-    "POST" -> unAppM $ Views.postCollection request
+  case (rawPathInfo request, requestMethod request) of
+    ("/", "GET") -> unAppM $ Views.root
+    ("/", _) -> return notAllowed
+    (path, "GET") -> unAppM $ Views.getCollection request path
+    (path, "POST") -> unAppM $ Views.postCollection request path
     _ -> return notAllowed
 --(respond $ responseLBS status200 [] ((C8.pack . show) request))
