@@ -36,6 +36,7 @@ instance Aeson.FromJSON Endpoint
 data Collection = Collection {
   _collectionContent::Trie [ItemContent],
   _collectionEndpoint::Maybe Endpoint }
+  deriving (Show)
 
 toCollection :: [Term] -> Collection
 toCollection is = Collection c Nothing

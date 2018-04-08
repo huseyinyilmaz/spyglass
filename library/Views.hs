@@ -34,7 +34,12 @@ import Env(Config(..))
 
 root :: AppM Response
 root = do
-  return (responseLBS status200 [] "Root")
+  AppState {_mapRef=mapRef} <- ask
+  m <- liftIO $ STM.readTVarIO mapRef
+  return (responseLBS status200 [] ("Collections:" <> (showByteString (Map.keys m))))
+  where
+    showByteString :: Show a => a -> LC8.ByteString
+    showByteString =  LC8.pack . show
 
 getCollection :: Request -> B.ByteString -> AppM Response
 --getCollection :: Request -> ReaderT AppState IO Response
