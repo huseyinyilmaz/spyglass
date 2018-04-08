@@ -58,7 +58,6 @@ getCollection request path = do
             maybeResult = do
               query <- join $ Data.List.lookup "query" (queryString request)
               return $ Collection.lookup query c
-
         case maybeResult of
           Just result -> do
             let maybeLimit :: Maybe Int

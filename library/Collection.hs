@@ -17,6 +17,7 @@ import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
 -- import qualified Data.ByteString.Lazy as LB
+import Control.Concurrent.MVar (newMVar, tryTakeMVar, putMVar, MVar)
 
 import Utility(reverseSort, toLower)
 import Types(ItemContent(..))
@@ -35,16 +36,19 @@ instance Aeson.FromJSON Endpoint
 
 data Collection = Collection {
   _collectionContent::Trie [ItemContent],
-  _collectionEndpoint::Maybe Endpoint }
-  deriving (Show)
+  _collectionEndpoint::Maybe Endpoint,
+  _lock:: MVar ()}
 
-toCollection :: [Term] -> Collection
-toCollection is = Collection c Nothing
+
+toCollection :: [Term] -> IO Collection
+toCollection is = do
+  lock <- newMVar ()
+  return $ Collection c Nothing lock
   where
     c = makeTrie is
 
 bodyToCollection :: PostRequest -> IO Collection
-bodyToCollection PostDataRequest{values=is} = return (toCollection is)
+bodyToCollection PostDataRequest{values=is} = toCollection is
 bodyToCollection PostEndpointRequest{timeout=t, endpoint=u} = do
   response <- simpleHTTP (getLazyRequest (C8.unpack u))
   body <- getResponseBody response
