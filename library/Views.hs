@@ -1,5 +1,5 @@
-module Views(getCollection,
-             postCollection,
+module Views(getView,
+             postView,
              root,
              debugView) where
 
@@ -22,14 +22,16 @@ import Data.Aeson(encode, eitherDecode)
 import Text.Read(readMaybe)
 import Control.Concurrent(forkIO)
 import Control.Concurrent(threadDelay)
+import qualified Control.Concurrent.MVar as MVar
 
 import Collection(bodyToCollection,
                   lookup,
-                  isValid)
+                  isValid,
+                  Collection)
 import Request(PostRequest(..))
 import Types(ItemContent(..))
 --import State(AppState(..), AppStateT)
-import State(AppState(..), AppM(..))
+import State(AppState(..), AppM(..), getCollection)
 import Env(Config(..))
 
 root :: AppM Response
@@ -41,14 +43,11 @@ root = do
     showByteString :: Show a => a -> LC8.ByteString
     showByteString =  LC8.pack . show
 
-getCollection :: Request -> B.ByteString -> AppM Response
---getCollection :: Request -> ReaderT AppState IO Response
-getCollection request path = do
-  AppState {_mapRef=mapRef,
-            _config=Config{ defaultResultLimit=defaultLimit }} <- ask
-  m <- liftIO $ STM.readTVarIO mapRef
-  liftIO $ putStrLn $ show request
-  case Map.lookup path m of
+getView :: Request -> AppM Response
+getView request = do
+  AppState {_config=Config{ defaultResultLimit=defaultLimit }} <- ask
+  maybeCollection <- getCollection request
+  case maybeCollection of
     Nothing -> return (responseLBS status404 [] "Collection Does Not Exist!")
 
     Just c -> do
@@ -73,11 +72,15 @@ getCollection request path = do
               putStrLn "test"
             return (responseLBS status404 [] "Not Found")
       else
+        -- took <- tryPutMVar $ (_lock c) ()
+        -- if took then
+        --    return (responseLBS status404 [] "Not Valid anymore.")
+        -- else
+        --   return (responseLBS status404 [] "Not Valid anymore.")
         return (responseLBS status404 [] "Not Valid anymore.")
 
---postCollection :: Request -> ReaderT AppState IO Response
-postCollection :: Request -> B.ByteString -> AppM Response
-postCollection request path = do
+postView :: Request -> AppM Response
+postView request = do
   AppState {_mapRef=mapRef} <- ask
   m <- liftIO $ STM.readTVarIO mapRef
   body <- liftIO $ strictRequestBody request
@@ -89,6 +92,8 @@ postCollection request path = do
       let newMap = Map.insert path newCollection m
       liftIO $ STM.atomically $ STM.writeTVar mapRef newMap
       return noContent
+   where
+     path = rawPathInfo request
 
 debugView :: Request -> ReaderT AppState IO Response
 debugView request = do

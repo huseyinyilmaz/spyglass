@@ -48,7 +48,7 @@ router request = do
   case (rawPathInfo request, requestMethod request) of
     ("/", "GET") -> unAppM $ Views.root
     ("/", _) -> return notAllowed
-    (path, "GET") -> unAppM $ Views.getCollection request path
-    (path, "POST") -> unAppM $ Views.postCollection request path
+    (path, "GET") -> unAppM $ Views.getView request
+    (path, "POST") -> unAppM $ Views.postView request
     _ -> return notAllowed
 --(respond $ responseLBS status200 [] ((C8.pack . show) request))

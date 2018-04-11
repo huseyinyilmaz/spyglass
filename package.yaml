@@ -54,6 +54,7 @@ library:
   - HTTP
   - network-uri
   - concurrent-extra
+  - lens
 
   - tasty
   - tasty-hspec
