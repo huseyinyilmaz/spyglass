@@ -10,14 +10,14 @@ import Data.Monoid ((<>))
 import Data.Time.Clock(getCurrentTime,
                        addUTCTime)
 import Data.Maybe(fromMaybe)
-
+import Control.Lens
 import Network.HTTP
 import qualified Data.Trie as Trie
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
 -- import qualified Data.ByteString.Lazy as LB
-import Control.Concurrent.MVar (newMVar, tryTakeMVar, putMVar, MVar)
+import Control.Concurrent.MVar (newMVar, newEmptyMVar, tryTakeMVar, putMVar, MVar)
 
 import Utility(reverseSort, toLower)
 import Types(ItemContent(..))
@@ -25,6 +25,7 @@ import Common()
 import Utility
 import Request(Term(..), PostRequest(..))
 
+-- ============================= Endpoint ============================
 data Endpoint = Endpoint {
   _endpointUrl::B.ByteString, -- Endpoint url
   _endpointTimeout::Integer,  -- Lifetime of data in seconds.
@@ -34,15 +35,29 @@ data Endpoint = Endpoint {
 instance Aeson.ToJSON Endpoint
 instance Aeson.FromJSON Endpoint
 
+endpointUrl :: Lens' Endpoint B.ByteString
+endpointUrl = lens _endpointUrl (\e url -> e{_endpointUrl=url})
+endpointTimeout :: Lens' Endpoint Integer
+endpointTimeout = lens _endpointTimeout (\e url -> e{_endpointTimeout=url})
+endpointEndOfLife :: Lens' Endpoint UTCTime
+endpointEndOfLife = lens _endpointEndOfLife (\e url -> e{_endpointEndOfLife=url})
+
+-- ============================ Collection ===========================
 data Collection = Collection {
   _collectionContent::Trie [ItemContent],
   _collectionEndpoint::Maybe Endpoint,
-  _lock:: MVar ()}
+  _collectionLock:: MVar ()}
 
+collectionContent :: Lens' Collection (Trie [ItemContent])
+collectionContent = lens _collectionContent (\c content -> c{_collectionContent=content})
+collectionEndpoint :: Lens' Collection (Maybe Endpoint)
+collectionEndpoint = lens _collectionEndpoint (\c me -> c{_collectionEndpoint=me})
+collectionLock :: Lens' Collection (MVar ())
+collectionLock = lens _collectionLock (\c me -> c{_collectionLock=me})
 
 toCollection :: [Term] -> IO Collection
 toCollection is = do
-  lock <- newMVar ()
+  lock <- newEmptyMVar
   return $ Collection c Nothing lock
   where
     c = makeTrie is
@@ -58,19 +73,21 @@ bodyToCollection PostEndpointRequest{timeout=t, endpoint=u} = do
       collection <- bodyToCollection pr
       let c :: Collection
           c = collection{ _collectionEndpoint=Just $ Endpoint{_endpointUrl=u,
-                                                              _endpointTimeout=to,
-                                                              _endpointEndOfLife=addUTCTime (fromInteger to) now}}
+                                                              _endpointTimeout=timeOut,
+                                                              _endpointEndOfLife=addUTCTime (fromInteger timeOut) now}}
       return c
     Nothing -> error "Could not parse response"
   where
-    to = fromMaybe (60 * 60) t -- default timeout is one hour
+    timeOut = fromMaybe (60 * 60) t -- default timeout is one hour
 
-isValid :: Collection -> IO Bool
-isValid c = do
+isExpired :: Collection -> IO Bool
+isExpired c = do
   now <- getCurrentTime
   case _collectionEndpoint c of
-    Just Endpoint{_endpointEndOfLife=eol} -> return $ now < eol
-    Nothing -> return True
+    Just Endpoint{_endpointEndOfLife=eol} -> return (now >= eol)
+    -- Application assumes that if Collection does not have endpoint isExpired returns false
+    Nothing -> return False
+
 
 lookup :: B.ByteString -> Collection -> [ItemContent]
 lookup rawQuery Collection{_collectionContent=trie} = lookupFromTrie trie

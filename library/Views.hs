@@ -12,7 +12,6 @@ import Utility(noContent, errorResponse)
 import qualified Data.List
 import Data.Maybe (fromMaybe)
 import Network.HTTP.Types.Status(status200, status404)
-import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy.Char8 as LC8
 import Network.Wai
 import Control.Monad(join)
@@ -20,14 +19,10 @@ import Control.Monad.Reader
 import Data.Monoid((<>))
 import Data.Aeson(encode, eitherDecode)
 import Text.Read(readMaybe)
-import Control.Concurrent(forkIO)
-import Control.Concurrent(threadDelay)
-import qualified Control.Concurrent.MVar as MVar
 
-import Collection(bodyToCollection,
-                  lookup,
-                  isValid,
-                  Collection)
+import Collection(bodyToCollection, lookup)
+
+
 import Request(PostRequest(..))
 import Types(ItemContent(..))
 --import State(AppState(..), AppStateT)
@@ -49,35 +44,21 @@ getView request = do
   maybeCollection <- getCollection request
   case maybeCollection of
     Nothing -> return (responseLBS status404 [] "Collection Does Not Exist!")
-
     Just c -> do
-      valid <- liftIO $ isValid c
-      if valid then do
-        let maybeResult :: Maybe [ItemContent]
-            maybeResult = do
-              query <- join $ Data.List.lookup "query" (queryString request)
-              return $ Collection.lookup query c
-        case maybeResult of
-          Just result -> do
-            let maybeLimit :: Maybe Int
-                maybeLimit = do
-                  maybeLimitBS <- Data.List.lookup "limit" (queryString request)
-                  limitBS <- maybeLimitBS
-                  (readMaybe . Text.unpack . decodeUtf8) limitBS
-                limit = fromMaybe defaultLimit maybeLimit
-            return (responseLBS status200 [] (encode (take limit result)))
-          Nothing -> do
-            _ <- liftIO $ forkIO $ do
-              threadDelay (1000 * 1000 * 10)
-              putStrLn "test"
-            return (responseLBS status404 [] "Not Found")
-      else
-        -- took <- tryPutMVar $ (_lock c) ()
-        -- if took then
-        --    return (responseLBS status404 [] "Not Valid anymore.")
-        -- else
-        --   return (responseLBS status404 [] "Not Valid anymore.")
-        return (responseLBS status404 [] "Not Valid anymore.")
+      let maybeResult :: Maybe [ItemContent]
+          maybeResult = do
+            query <- join $ Data.List.lookup "query" (queryString request)
+            return $ Collection.lookup query c
+      case maybeResult of
+        Just result -> do
+          let maybeLimit :: Maybe Int
+              maybeLimit = do
+                maybeLimitBS <- Data.List.lookup "limit" (queryString request)
+                limitBS <- maybeLimitBS
+                (readMaybe . Text.unpack . decodeUtf8) limitBS
+              limit = fromMaybe defaultLimit maybeLimit
+          return (responseLBS status200 [] (encode (take limit result)))
+        Nothing -> return (responseLBS status404 [] "Not Found")
 
 postView :: Request -> AppM Response
 postView request = do
