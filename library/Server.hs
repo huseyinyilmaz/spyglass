@@ -1,12 +1,12 @@
 module Server where
+import Prelude hiding(map)
 
 import Network.Wai
 import Network.Wai.Handler.Warp (run)
-
 import qualified Control.Concurrent.STM as STM
 import qualified Data.Map.Strict as Map
 import Data.Monoid((<>))
-
+import Control.Monad(foldM)
 --import Types
 import Env(Config(..))
 import qualified Views as Views
@@ -21,8 +21,13 @@ import Control.Monad.Reader (ReaderT, runReaderT)
 
 getState :: Config -> IO AppState
 getState config = do
-  ref <- STM.newTVarIO Map.empty
+  newMap <- foldM addEndpoint Map.empty (endpoints config)
+  ref <- STM.newTVarIO newMap
   return $ AppState ref config
+  where
+    addEndpoint map e = do
+      -- XXX add endpoint result to map.
+      return map
 
 
 main :: IO ()

@@ -11,6 +11,8 @@ import qualified Data.ByteString as B
 -- import System.Directory (getHomeDirectory)
 -- import Data.Monoid((<>))
 -- import Types
+import qualified Collection
+
 data Endpoint = Endpoint {
   path :: B.ByteString,
   url :: B.ByteString,
@@ -42,6 +44,9 @@ instance ToJSON AuthUser
 instance FromJSON AuthUser
 instance ToJSON Config
 instance FromJSON Config
+
+instance Collection.ToCollection Endpoint where
+  toCollection e = error "Imlement this"
 
 readConfig :: IO Config
 readConfig = do

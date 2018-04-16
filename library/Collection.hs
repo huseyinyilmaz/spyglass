@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 module Collection where
 
 import Data.List (groupBy, head, sort)
@@ -17,7 +18,7 @@ import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
 -- import qualified Data.ByteString.Lazy as LB
-import Control.Concurrent.MVar (newMVar, newEmptyMVar, tryTakeMVar, putMVar, MVar)
+import Control.Concurrent.MVar (newEmptyMVar, MVar)
 
 import Utility(reverseSort, toLower)
 import Types(ItemContent(..))
@@ -55,12 +56,15 @@ collectionEndpoint = lens _collectionEndpoint (\c me -> c{_collectionEndpoint=me
 collectionLock :: Lens' Collection (MVar ())
 collectionLock = lens _collectionLock (\c me -> c{_collectionLock=me})
 
-toCollection :: [Term] -> IO Collection
-toCollection is = do
-  lock <- newEmptyMVar
-  return $ Collection c Nothing lock
-  where
-    c = makeTrie is
+class ToCollection a where
+  toCollection :: a -> IO Collection
+
+instance ToCollection [Term] where
+  toCollection is = do
+    lock <- newEmptyMVar
+    return $ Collection c Nothing lock
+    where
+      c = makeTrie is
 
 bodyToCollection :: PostRequest -> IO Collection
 bodyToCollection PostDataRequest{values=is} = toCollection is
