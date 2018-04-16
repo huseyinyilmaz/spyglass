@@ -11,6 +11,11 @@ import qualified Data.ByteString as B
 -- import System.Directory (getHomeDirectory)
 -- import Data.Monoid((<>))
 -- import Types
+data Endpoint = Endpoint {
+  path :: B.ByteString,
+  url :: B.ByteString,
+  timeout :: Maybe Integer
+  } deriving(Generic, Show, Eq)
 
 data AuthUser = AuthUser {
   username:: B.ByteString,
@@ -27,9 +32,12 @@ data Config = Config {
   loggingEnabled:: Bool,
   loggingForDevelopment:: Bool,
   defaultResultLimit:: Int,
-  users :: [AuthUser]
+  users :: [AuthUser],
+  endpoints :: [Endpoint]
   } deriving (Generic, Show, Eq)
 
+instance ToJSON Endpoint
+instance FromJSON Endpoint
 instance ToJSON AuthUser
 instance FromJSON AuthUser
 instance ToJSON Config
