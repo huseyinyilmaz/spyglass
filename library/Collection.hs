@@ -27,6 +27,8 @@ import Utility
 import Request(Term(..), PostRequest(..))
 
 -- ============================= Endpoint ============================
+-- | Endpoint for a collection. This Endpoint will be called to refresh the data
+-- when timeout is achieved.
 data Endpoint = Endpoint {
   _endpointUrl::B.ByteString, -- Endpoint url
   _endpointTimeout::Integer,  -- Lifetime of data in seconds.
