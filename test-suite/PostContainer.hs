@@ -6,26 +6,26 @@ import Test.Hspec.Wai
 import Network.Wai
 import qualified Network.Wai.Test as WT
 import Server(getApp, getState)
-import Types(Config(..), AuthUser(..))
-import Collection(RawItem(..), PostCollectionBody(..))
+import Env(Config(..), AuthUser(..))
+--import Collection(Endpoint(..), Collection(..))
+import Request(PostRequest(..), Term(..), IndexType(..))
 import Middlewares
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Base64 as B64
 import Data.Monoid((<>))
 
-searchData :: PostCollectionBody
-searchData = PostCollectionBody {
-  content=[
-  RawItem {term= "apple",   content= "apple content"},
-  RawItem {term= "apricot", content= "apricot content"},
-  RawItem {term= "cattle",  content= "cattle for content"},
-  RawItem {term= "orange",  content= "another orange content"},
-  RawItem {term= "amiddb",  content= "a middle b content"},
-  RawItem {term= "cmiddd",  content= "c middle d content"},
-  RawItem {term= "first second third forth",  content= "first second third forth content"}
-  ],
-  endpoint=Nothing}
+searchData :: PostRequest
+searchData = PostDataRequest {
+  values=[
+  Term {indexType= Just Infix, term= "apple",   value= "apple content"},
+  Term {indexType= Just Infix, term= "apricot", value= "apricot content"},
+  Term {indexType= Just Infix, term= "cattle",  value= "cattle for content"},
+  Term {indexType= Just Infix, term= "orange",  value= "another orange content"},
+  Term {indexType= Just Infix, term= "amiddb",  value= "a middle b content"},
+  Term {indexType= Just Infix, term= "cmiddd",  value= "c middle d content"},
+  Term {indexType= Just Infix, term= "first second third forth",  value= "first second third forth content"}
+  ]}
 
 config :: Config
 config = Config {
@@ -38,7 +38,8 @@ config = Config {
   loggingForDevelopment=False,
   gzipEnabled=False,
   defaultResultLimit=20,
-  users=[AuthUser {username="test", password="test"}]
+  users=[AuthUser {username="test", password="test"}],
+  endpoints=[]
   }
 
 app :: IO Application
@@ -108,7 +109,7 @@ testGetNotFound =
   do
     do describe "GET /test 404" $
         do it "Sends a get request and expects 404 as a result." $ do
-            get  "/test?query=apple" `shouldRespondWith` "Not Found" {matchStatus = 404}
+            get  "/test?query=apple" `shouldRespondWith` "Collection Does Not Exist!" {matchStatus = 404}
 
 spec :: Spec
 spec = do
