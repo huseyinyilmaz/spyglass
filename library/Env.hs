@@ -7,13 +7,11 @@ import Common()
 -- import qualified Data.List as L
 import qualified Data.Yaml as Y
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as C8
 
 -- import qualified Data.Text as T
 -- import System.Directory (getHomeDirectory)
 -- import Data.Monoid((<>))
 -- import Types
-import qualified Data.Aeson as Aeson
 import qualified Collection
 
 data Endpoint = Endpoint {
@@ -49,24 +47,8 @@ instance ToJSON Config
 instance FromJSON Config
 
 instance Collection.ToCollection Endpoint where
-  toCollection Endpoint {url=url, timeout=t} = do
-    response <- simpleHTTP (getLazyRequest (C8.unpack u))
-    body <- getResponseBody response
-    case Aeson.decode body of
-      Just pr -> do
-        now <- getCurrentTime
-        collection <- bodyToCollection pr
-        let eol = addUTCTime (fromInteger timeOut) now
-            ep = Collection.Endpoint{Collection._endpointUrl=u,
-                                     Collection._endpointTimeout=timeOut,
-                                     Collection._endpointEndOfLife=eol}
-            c :: Collection.Collection
-            c = collection{ Collection._collectionEndpoint=Just ep }
-        return c
-      Nothing -> error "Could not parse response"
-    where
-      timeOut = fromMaybe (60 * 60) t -- default timeout is one hour
-
+  toCollection Endpoint {url=u, timeout=t} =
+    Collection.requestCollectionEndpoint u t
 
 readConfig :: IO Config
 readConfig = do

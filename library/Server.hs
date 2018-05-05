@@ -13,6 +13,8 @@ import qualified Views as Views
 import qualified Env as Env
 import Middlewares
 import Utility
+import Collection(toCollection)
+
 import State(AppState(..), AppM(..))
 -- import Network.HTTP.Types.Status(status200)
 -- import qualified Data.ByteString.Lazy.Char8 as C8
@@ -26,9 +28,10 @@ getState config = do
   return $ AppState ref config
   where
     addEndpoint map e = do
-      -- XXX add endpoint result to map.
-      return map
-
+      putStrLn ("Initializing " <> show e)
+      collection <- toCollection e
+      putStrLn "Initialization complete."
+      return $ Map.insert (Env.path e) collection map
 
 main :: IO ()
 main = do

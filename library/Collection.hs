@@ -4,12 +4,13 @@ module Collection where
 import Data.List (groupBy, head, sort)
 --import Data.String(IsString)
 import Data.Time(UTCTime)
+import Data.Time.Clock(getCurrentTime,
+                       addUTCTime)
+
 import Data.Trie(Trie, fromList)
 import GHC.Generics(Generic)
 import Data.Function (on)
 import Data.Monoid ((<>))
-import Data.Time.Clock(getCurrentTime,
-                       addUTCTime)
 import Data.Maybe(fromMaybe)
 import Control.Lens
 import Network.HTTP
@@ -127,3 +128,22 @@ makeTrie is = trie
     items :: [(B.ByteString, [ItemContent])]
     items = fmap listToKV groupedItems
     !trie = fromList items
+
+requestCollectionEndpoint :: C8.ByteString -> Maybe Integer -> IO Collection
+requestCollectionEndpoint url t = do
+  response <- simpleHTTP (getLazyRequest (C8.unpack url))
+  body <- getResponseBody response
+  case Aeson.decode body of
+    Just pr -> do
+      now <- getCurrentTime
+      collection <- Collection.bodyToCollection pr
+      let eol = addUTCTime (fromInteger timeOut) now
+          ep = Collection.Endpoint{_endpointUrl=url,
+                                   _endpointTimeout=timeOut,
+                                   _endpointEndOfLife=eol}
+          c :: Collection
+          c = collection{ _collectionEndpoint=Just ep }
+      return c
+    Nothing -> error "Could not parse response"
+  where
+    timeOut = fromMaybe (60 * 60) t -- default timeout is one hour
