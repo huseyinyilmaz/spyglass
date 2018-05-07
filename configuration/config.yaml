@@ -1,0 +1,16 @@
+port: 8080
+
+gzipEnabled: True
+
+monitoringEnabled: True
+monitoringIP: "0.0.0.0"
+monitoringPort: 8088
+
+loggingEnabled: True
+loggingForDevelopment: True
+
+defaultResultLimit: 20
+
+users:
+  - username: admin
+    password: password
