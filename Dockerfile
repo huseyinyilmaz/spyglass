@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
   libgmp-dev
 COPY --from=builder /opt/build/.stack-work/install/x86_64-linux/lts-11.7/8.2.2/bin .
 # copy configuration
-RUN mkdir etc/spyglass
+RUN mkdir -p /etc/spyglass
 COPY configuration/config.yaml /etc/spyglas/config.yaml
 # COPY static /opt/spyglass/static
 # COPY config /opt/spyglass/config
