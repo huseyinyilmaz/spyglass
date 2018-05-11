@@ -7,7 +7,7 @@ import Common()
 -- import qualified Data.List as L
 import qualified Data.Yaml as Y
 import qualified Data.ByteString as B
-
+import qualified Data.Text as Text
 -- import qualified Data.Text as T
 -- import System.Directory (getHomeDirectory)
 -- import Data.Monoid((<>))
@@ -15,22 +15,22 @@ import qualified Data.ByteString as B
 import qualified Collection
 
 data Endpoint = Endpoint {
-  path :: B.ByteString,
-  url :: B.ByteString,
+  path :: Text.Text,
+  url :: Text.Text,
   timeout :: Maybe Integer
   } deriving(Generic, Show, Eq)
 
 data AuthUser = AuthUser {
-  username:: B.ByteString,
-  password:: B.ByteString
+  username:: Text.Text,
+  password:: Text.Text
   } deriving (Generic, Show, Eq)
 
 data Config = Config {
   port:: Int,
-  callbacks:: [B.ByteString],
+  callbacks:: [Text.Text],
   gzipEnabled:: Bool,
   monitoringEnabled:: Bool,
-  monitoringIP:: B.ByteString,
+  monitoringIP:: Text.Text,
   monitoringPort:: Int,
   loggingEnabled:: Bool,
   loggingForDevelopment:: Bool,

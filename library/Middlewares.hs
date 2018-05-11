@@ -9,6 +9,8 @@ import Network.Wai (Middleware)
 import Network.Wai.Middleware.Gzip
 import Network.Wai.Middleware.Autohead
 import Network.Wai.Middleware.HttpAuth
+import Data.Text.Encoding(encodeUtf8, decodeUtf8)
+import qualified Data.Text as Text
 
 --import Types
 import Env(Config(..), AuthUser(..))
@@ -17,9 +19,9 @@ getMonitoringMiddleware config = do
   if (monitoringEnabled config) then do
     let monIp=(monitoringIP config)
         monPort=(monitoringPort config)
-    ekg <- forkServer monIp monPort
+    ekg <- forkServer (encodeUtf8 monIp) monPort
     waiMetrics <- registerWaiMetrics (serverMetricStore ekg)
-    putStrLn ("Monitoring is enabled at " <> (C8.unpack monIp) <> ":" <>(show monPort))
+    putStrLn ("Monitoring is enabled at " <> (Text.unpack monIp) <> ":" <>(show monPort))
     return (metrics waiMetrics)
   else
     return id
@@ -53,7 +55,7 @@ getAuthMiddleware Config{ users=us } =
     isProtected = return . (=="POST") . requestMethod
     checkCredentials u p = return (any check us)
       where
-        check AuthUser {username=uu, password=up} = (uu == u) && (up == p)
+        check AuthUser {username=uu, password=up} = (uu == decodeUtf8 u) && (up == decodeUtf8 p)
 
 getMiddlewares :: Config -> IO Middleware
 getMiddlewares config = do

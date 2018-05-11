@@ -58,3 +58,9 @@ getLazyRequest urlString =
   case parseURI urlString of
     Nothing -> error ("getLazyRequest: Not a valid URL - " ++ urlString)
     Just u  -> HTTP.mkRequest HTTP.GET u
+
+-- /search => search
+-- /search/one/two => search/one/two
+-- /search/one/two/ => search/one/two
+buildPath :: [Text.Text] -> Text.Text
+buildPath ps = Text.intercalate "/" (filter (/="") ps)

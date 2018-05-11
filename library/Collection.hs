@@ -18,6 +18,9 @@ import qualified Data.Trie as Trie
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
+import qualified Data.Text as Text
+import Data.Text.Encoding(encodeUtf8, decodeUtf8)
+
 -- import qualified Data.ByteString.Lazy as LB
 import Control.Concurrent.MVar (newEmptyMVar, MVar)
 
@@ -31,7 +34,7 @@ import Request(Term(..), PostRequest(..))
 -- | Endpoint for a collection. This Endpoint will be called to refresh the data
 -- when timeout is achieved.
 data Endpoint = Endpoint {
-  _endpointUrl::B.ByteString, -- Endpoint url
+  _endpointUrl::Text.Text, -- Endpoint url
   _endpointTimeout::Integer,  -- Lifetime of data in seconds.
   _endpointEndOfLife::UTCTime -- End of life time.
   } deriving(Show, Eq, Generic)
@@ -39,7 +42,7 @@ data Endpoint = Endpoint {
 instance Aeson.ToJSON Endpoint
 instance Aeson.FromJSON Endpoint
 
-endpointUrl :: Lens' Endpoint B.ByteString
+endpointUrl :: Lens' Endpoint Text.Text
 endpointUrl = lens _endpointUrl (\e url -> e{_endpointUrl=url})
 endpointTimeout :: Lens' Endpoint Integer
 endpointTimeout = lens _endpointTimeout (\e url -> e{_endpointTimeout=url})
@@ -72,7 +75,7 @@ instance ToCollection [Term] where
 bodyToCollection :: PostRequest -> IO Collection
 bodyToCollection PostDataRequest{values=is} = toCollection is
 bodyToCollection PostEndpointRequest{timeout=t, endpoint=u} = do
-  response <- simpleHTTP (getLazyRequest (C8.unpack u))
+  response <- simpleHTTP (getLazyRequest (Text.unpack u))
   body <- getResponseBody response
   case Aeson.decode body of
     Just pr -> do
@@ -113,8 +116,9 @@ makeTrie is = trie
       i <- is
       let Term{term=t, value=c} = i
       -- t <- C8.words (term i)
-      tt <- C8.tails t
-      return (tt, c)
+      tt <- Text.tails t
+      return (encodeUtf8 tt, c)
+
     groupedItems = groupBy equalOnFirst (sort itemList)
 
     listToKV::[(B.ByteString, ItemContent)] -> (B.ByteString, [ItemContent])
@@ -129,9 +133,9 @@ makeTrie is = trie
     items = fmap listToKV groupedItems
     !trie = fromList items
 
-requestCollectionEndpoint :: C8.ByteString -> Maybe Integer -> IO Collection
+requestCollectionEndpoint :: Text.Text -> Maybe Integer -> IO Collection
 requestCollectionEndpoint url t = do
-  response <- simpleHTTP (getLazyRequest (C8.unpack url))
+  response <- simpleHTTP (getLazyRequest (Text.unpack url))
   body <- getResponseBody response
   case Aeson.decode body of
     Just pr -> do

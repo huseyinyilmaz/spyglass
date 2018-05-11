@@ -1,8 +1,8 @@
 module Request where
 
-import qualified Data.ByteString as B
 import GHC.Generics(Generic)
 import qualified Data.Aeson as Aeson
+import qualified Data.Text as Text
 import Types(ItemContent, untagged)
 import Common()
 import Data.Aeson
@@ -13,7 +13,7 @@ data IndexType = Infix | Prefix deriving (Show, Eq, Generic)
 
 data Term = Term {
   indexType :: !(Maybe IndexType),
-  term :: !B.ByteString,
+  term :: !Text.Text,
   value :: !ItemContent
   } deriving (Show, Eq, Generic)
 
@@ -23,7 +23,7 @@ data PostRequest =
   PostDataRequest { values:: ![Term] } |
   PostEndpointRequest {
     timeout:: !(Maybe Integer),
-    endpoint:: !B.ByteString}
+    endpoint:: !Text.Text}
  deriving (Show, Generic, Eq)
 
 instance Aeson.ToJSON IndexType

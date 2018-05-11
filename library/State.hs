@@ -2,8 +2,10 @@ module State where
 import Data.Map.Strict(Map)
 import qualified Control.Concurrent.STM as STM
 import qualified Data.ByteString as B
+import qualified Data.Text as Text
 import qualified Collection
 import qualified Request
+import qualified Utility
 import Env(Config)
 import Control.Monad.Reader
 import Network.Wai(Request(..), Response, responseLBS)
@@ -16,14 +18,14 @@ import Control.Concurrent(forkIO,
                           threadDelay)
 
 -- ============================= AppState ============================
-type MapRef = STM.TVar (Map B.ByteString Collection.Collection)
+type MapRef = STM.TVar (Map Text.Text Collection.Collection)
 
 data AppState = AppState {
   _mapRef::MapRef,
   _config::Config
 }
 
-mapRef :: Lens' AppState (STM.TVar (Map B.ByteString Collection.Collection))
+mapRef :: Lens' AppState (STM.TVar (Map Text.Text Collection.Collection))
 mapRef = lens _mapRef (\i x -> i{_mapRef=x})
 
 config :: Lens' AppState Config
@@ -35,7 +37,7 @@ newtype AppM a
     { unAppM :: ReaderT AppState IO a
     } deriving (Functor, Applicative, Monad, MonadIO, MonadReader AppState)
 
-updateCollection :: MapRef -> B.ByteString -> Collection.Collection -> STM.STM ()
+updateCollection :: MapRef -> Text.Text -> Collection.Collection -> STM.STM ()
 updateCollection mr name collection= do
   STM.modifyTVar mr update
   where
@@ -74,4 +76,4 @@ getCollection request = do
         return $ Just collection
     Nothing -> return Nothing
   where
-    path = rawPathInfo request
+    path = Utility.buildPath (pathInfo request)

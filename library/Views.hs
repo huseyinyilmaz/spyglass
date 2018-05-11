@@ -10,6 +10,7 @@ import Control.Monad.IO.Class(liftIO)
 import qualified Data.Map.Strict as Map
 import Utility(noContent, errorResponse)
 import qualified Data.List
+import qualified Utility
 import Data.Maybe (fromMaybe)
 import Network.HTTP.Types.Status(status200, status404)
 import qualified Data.ByteString.Lazy.Char8 as LC8
@@ -74,7 +75,7 @@ postView request = do
       liftIO $ STM.atomically $ STM.writeTVar mapRef newMap
       return noContent
    where
-     path = rawPathInfo request
+     path = Utility.buildPath (pathInfo request)
 
 debugView :: Request -> ReaderT AppState IO Response
 debugView request = do
