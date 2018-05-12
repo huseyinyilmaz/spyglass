@@ -70,7 +70,11 @@ postView request = do
   case ((eitherDecode body)::Either String PostRequest) of
     Left e -> return $ errorResponse ("Error: Invalid request body." <> (LC8.pack e))
     Right postCollectionBody -> do
-      newCollection <- liftIO $ bodyToCollection postCollectionBody
+      newCollection <- liftIO $ do
+        maybeCollection <- bodyToCollection postCollectionBody
+        case maybeCollection of
+          Just collection -> return collection
+          Nothing -> error "Could not parse document."
       let newMap = Map.insert path newCollection m
       liftIO $ STM.atomically $ STM.writeTVar mapRef newMap
       return noContent

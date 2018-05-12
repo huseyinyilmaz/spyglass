@@ -61,14 +61,22 @@ getCollection request = do
                 epRequest = Request.PostEndpointRequest{
                   timeout=Just (ep ^. Collection.endpointTimeout),
                   endpoint=ep ^. Collection.endpointUrl}
-            newCollection <- Collection.bodyToCollection epRequest
-            -- TODO try to lift STM directly to monad IO.
-            -- threadDelay (1000 * 1000 * 10)
-            STM.atomically (updateCollection mr path newCollection)
-            maybeLock <- tryTakeMVar lock
-            case maybeLock of
-              Just () -> return ()
-              Nothing -> error "Lock assertion failed!"
+            maybeCollection <- Collection.bodyToCollection epRequest
+            case maybeCollection of
+              Just newCollection -> do
+                -- TODO try to lift STM directly to monad IO.
+                -- threadDelay (1000 * 1000 * 10)
+                STM.atomically (updateCollection mr path newCollection)
+                maybeLock <- tryTakeMVar lock
+                case maybeLock of
+                  Just () -> return ()
+                  Nothing -> error "Lock assertion failed!"
+              Nothing -> do
+                maybeLock <- tryTakeMVar lock
+                case maybeLock of
+                  Just () -> return ()
+                  Nothing -> error "Lock assertion failed!"
+                error "could not get collection"
           return $ Just collection
         else
           return $ Just collection

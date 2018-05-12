@@ -47,8 +47,11 @@ instance ToJSON Config
 instance FromJSON Config
 
 instance Collection.ToCollection Endpoint where
-  toCollection Endpoint {url=u, timeout=t} =
-    Collection.requestCollectionEndpoint u t
+  toCollection Endpoint {url=u, timeout=t} = do
+    maybeCollection <- Collection.requestCollectionEndpoint u t 5
+    case maybeCollection of
+      Just collection -> return collection
+      Nothing -> error "Problem Reading endpoint quiting...."
 
 readConfig :: IO Config
 readConfig = do

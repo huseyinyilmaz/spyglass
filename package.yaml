@@ -63,7 +63,7 @@ library:
   - base64-bytestring
 
   - criterion
-
+  - concurrent-extra
 
   source-dirs: library
 
