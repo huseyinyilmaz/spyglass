@@ -50,6 +50,7 @@ getCollection request = do
   AppState {_mapRef=mr} <- ask
   m <- liftIO $ STM.readTVarIO mr
   case Map.lookup path m of
+    Nothing -> return Nothing
     Just collection -> do
       expired <- liftIO $ Collection.isExpired collection
       if expired then do
@@ -62,26 +63,24 @@ getCollection request = do
                   timeout=Just (ep ^. Collection.endpointTimeout),
                   endpoint=ep ^. Collection.endpointUrl}
             maybeCollection <- Collection.bodyToCollection epRequest
-            case maybeCollection of
+            _ <- case maybeCollection of
               Just newCollection -> do
                 -- TODO try to lift STM directly to monad IO.
                 -- threadDelay (1000 * 1000 * 10)
                 STM.atomically (updateCollection mr path newCollection)
-                maybeLock <- tryTakeMVar lock
-                case maybeLock of
-                  Just () -> return ()
-                  Nothing -> error "Lock assertion failed!"
+                putStrLn "Updated Collection"
+                return Nothing
               Nothing -> do
-                maybeLock <- tryTakeMVar lock
-                case maybeLock of
-                  Just () -> return ()
-                  Nothing -> error "Lock assertion failed!"
-                error "could not get collection"
+                putStrLn "Could not get collection"
+                return Nothing
+            maybeLock <- tryTakeMVar lock
+            case maybeLock of
+              Just () -> return ()
+              Nothing -> error "Lock assertion failed!"
           return $ Just collection
         else
           return $ Just collection
       else
         return $ Just collection
-    Nothing -> return Nothing
   where
     path = Utility.buildPath (pathInfo request)
