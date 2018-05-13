@@ -17,6 +17,12 @@ import qualified Network.HTTP as HTTP
 import Network.URI ( parseURI )
 
 import Data.Monoid((<>))
+import Network.Wreq(get, responseBody)
+import Network.HTTP.Client(HttpException(..))
+import Control.Lens
+import Control.Exception as E
+
+-- import Network.HTTP.Client(Response)
 
 toLower :: B.ByteString -> B.ByteString
 toLower = encodeUtf8 . Text.toLower . decodeUtf8
@@ -53,14 +59,28 @@ getTitle = foldr1 (<>) [
 
 getLazyRequest
     :: String                   -- ^URL to fetch
-    -> HTTP.Request LB.ByteString  -- ^The constructed request
+    -> Maybe (HTTP.Request LB.ByteString)  -- ^The constructed request
 getLazyRequest urlString =
   case parseURI urlString of
-    Nothing -> error ("getLazyRequest: Not a valid URL - " ++ urlString)
-    Just u  -> HTTP.mkRequest HTTP.GET u
+    Nothing -> Nothing
+    Just u  -> Just $ HTTP.mkRequest HTTP.GET u
 
 -- /search => search
 -- /search/one/two => search/one/two
 -- /search/one/two/ => search/one/two
 buildPath :: [Text.Text] -> Text.Text
 buildPath ps = Text.intercalate "/" (filter (/="") ps)
+
+httpGet :: String -> IO (Maybe LB.ByteString)
+httpGet url = do
+  maybeResponse <- (Just <$> (get url)) `E.catch` exceptionHandler
+  case maybeResponse of
+    (Just r) -> do
+      let body = r ^. responseBody
+      return $ Just body
+    Nothing -> return Nothing
+  where
+    exceptionHandler :: HttpException -> IO (Maybe a)
+    exceptionHandler e = do
+      putStrLn ("Could not get url " <> url <> " " <> (show e))
+      return Nothing

@@ -77,42 +77,7 @@ instance ToCollection [Term] where
 
 bodyToCollection :: PostRequest -> IO (Maybe Collection)
 bodyToCollection PostDataRequest{values=is} = fmap Just (toCollection is)
-bodyToCollection PostEndpointRequest{timeout=t, endpoint=u} = do
-  maybeResponse <- (fmap Just (simpleHTTP (getLazyRequest (Text.unpack u)))) `X.catch` exceptionHandler
-  case maybeResponse of
-    Just response ->
-      case response of
-        Left e -> do
-          putStrLn ("There was an error on collection request:" <> (show e))
-          return Nothing
-        Right _ -> do
-          body <- getResponseBody response
-          case Aeson.decode body of
-            Just pr -> do
-              now <- getCurrentTime
-              maybeCollection <- bodyToCollection pr
-              case maybeCollection of
-                Just collection -> do
-                  let c :: Collection
-                      c = collection{ _collectionEndpoint=Just
-                                      Endpoint{_endpointUrl=u,
-                                               _endpointTimeout=timeOut,
-                                               _endpointEndOfLife=addUTCTime (fromInteger timeOut) now}}
-                  return (Just c)
-                Nothing ->
-                  return Nothing
-            Nothing -> do
-              putStrLn "Could not parse response"
-              return Nothing
-    Nothing -> do
-      putStrLn "Connection Error"
-      return Nothing
-  where
-    timeOut = fromMaybe (60 * 60) t -- default timeout is one hour
-    exceptionHandler :: X.SomeException -> IO (Maybe a)
-    exceptionHandler e = do
-      putStrLn ("Connection Exception:" <> (show e))
-      return $ Nothing
+bodyToCollection PostEndpointRequest{timeout=t, endpoint=u} = requestCollectionEndpoint u t 5
 
 isExpired :: Collection -> IO Bool
 isExpired c = do
@@ -159,29 +124,29 @@ makeTrie is = trie
 
 requestCollectionEndpoint :: Text.Text -> Maybe Integer -> Integer -> IO (Maybe Collection)
 requestCollectionEndpoint _ _ 0 = return Nothing
-requestCollectionEndpoint url t retry = do
-  response <- simpleHTTP (getLazyRequest (Text.unpack url))
-  body <- getResponseBody response
-  case Aeson.decode body of
-    Just pr -> do
-      now <- getCurrentTime
-      maybeCollection <- Collection.bodyToCollection pr
-      case maybeCollection of
-        Just collection -> do
-          let eol = addUTCTime (fromInteger timeOut) now
-              ep = Collection.Endpoint{_endpointUrl=url,
-                                       _endpointTimeout=timeOut,
-                                       _endpointEndOfLife=eol}
-              c :: Collection
-              c = collection{ _collectionEndpoint=Just ep }
-          return (Just c)
-        Nothing -> do
-          threadDelay 5000
-          putStrLn ("Request failed. Remaining retry count:" <> (show (retry - 1)))
-          requestCollectionEndpoint url t (retry - 1)
-    Nothing -> do
-      threadDelay 5000
-      putStrLn ("Request failed. Remaining retry count:" <> (show (retry - 1)))
-      requestCollectionEndpoint url t (retry - 1)
+requestCollectionEndpoint url t r = do
+  maybeBody <- httpGet $ Text.unpack url
+  case maybeBody of
+    Nothing -> retry
+    Just body ->
+      case Aeson.decode body of
+        Nothing -> retry
+        Just pr -> do
+          now <- getCurrentTime
+          maybeCollection <- Collection.bodyToCollection pr
+          case maybeCollection of
+            Nothing -> retry
+            Just collection -> do
+              let eol = addUTCTime (fromInteger timeOut) now
+                  ep = Collection.Endpoint{_endpointUrl=url,
+                                           _endpointTimeout=timeOut,
+                                           _endpointEndOfLife=eol}
+                  c :: Collection
+                  c = collection{ _collectionEndpoint=Just ep }
+              return (Just c)
   where
     timeOut = fromMaybe (60 * 60) t -- default timeout is one hour
+    retry = do
+      threadDelay 5000
+      putStrLn ("Request failed. Remaining retry count:" <> (show (r - 1)))
+      requestCollectionEndpoint url t (r - 1)
