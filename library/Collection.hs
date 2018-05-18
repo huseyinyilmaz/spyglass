@@ -147,6 +147,6 @@ requestCollectionEndpoint url t r = do
   where
     timeOut = fromMaybe (60 * 60) t -- default timeout is one hour
     retry = do
-      threadDelay 5000
+      threadDelay 5000000
       putStrLn ("Request failed. Remaining retry count:" <> (show (r - 1)))
       requestCollectionEndpoint url t (r - 1)
