@@ -1,0 +1,20 @@
+port: 8080
+gzipEnabled: True
+
+monitoringEnabled: True
+monitoringIP: "0.0.0.0"
+monitoringPort: 8088
+
+loggingEnabled: False
+loggingForDevelopment: True
+
+defaultResultLimit: 20
+# Accounts to use for post requests
+users:
+  - username: admin
+    password: password
+
+endpoints:
+  # - path: "value"
+  #   url: "http://acme.com/api/v1/search/"
+  #   timeout: 300 # timeout in seconds.
