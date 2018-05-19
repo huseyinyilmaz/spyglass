@@ -13,17 +13,12 @@ import Data.Function (on)
 import Data.Monoid ((<>))
 import Data.Maybe(fromMaybe)
 import Control.Lens
-import Network.HTTP
-import Network.Stream(ConnError)
 import qualified Data.Trie as Trie
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Char8 as C8
 import qualified Data.Text as Text
-import Data.Text.Encoding(encodeUtf8, decodeUtf8)
+import Data.Text.Encoding(encodeUtf8)
 import Control.Concurrent(threadDelay)
-import qualified Control.Exception as X
 -- import qualified Data.ByteString.Lazy as LB
 import Control.Concurrent.MVar (newEmptyMVar, MVar)
 

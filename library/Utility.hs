@@ -13,11 +13,8 @@ import Network.HTTP.Types.Status(created201,
                                  badRequest400,
                                  notFound404,
                                  methodNotAllowed405)
-import qualified Network.HTTP as HTTP
-import Network.URI ( parseURI )
-
 import Data.Monoid((<>))
-import Network.Wreq(get, responseBody)
+import Network.Wreq(getWith, responseBody, header, defaults)
 import Network.HTTP.Client(HttpException(..))
 import Control.Lens
 import Control.Exception as E
@@ -57,14 +54,6 @@ getTitle = foldr1 (<>) [
   "    /____/ .___/\\__, /\\__, /_/\\__,_/____/____/\n ",
   "       /_/    /____//____/                      \n"]
 
-getLazyRequest
-    :: String                   -- ^URL to fetch
-    -> Maybe (HTTP.Request LB.ByteString)  -- ^The constructed request
-getLazyRequest urlString =
-  case parseURI urlString of
-    Nothing -> Nothing
-    Just u  -> Just $ HTTP.mkRequest HTTP.GET u
-
 -- /search => search
 -- /search/one/two => search/one/two
 -- /search/one/two/ => search/one/two
@@ -73,7 +62,8 @@ buildPath ps = Text.intercalate "/" (filter (/="") ps)
 
 httpGet :: String -> IO (Maybe LB.ByteString)
 httpGet url = do
-  maybeResponse <- (Just <$> (get url)) `E.catch` exceptionHandler
+  let opts = defaults & header "Accept" .~ ["application/json"]
+  maybeResponse <- (Just <$> (getWith opts url)) `E.catch` exceptionHandler
   case maybeResponse of
     (Just r) -> do
       let body = r ^. responseBody

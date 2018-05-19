@@ -1,21 +1,19 @@
 module State where
 import Data.Map.Strict(Map)
 import qualified Control.Concurrent.STM as STM
-import qualified Data.ByteString as B
 import qualified Data.Text as Text
 import qualified Collection
 import qualified Request
 import qualified Utility
 import Env(Config)
 import Control.Monad.Reader
-import Network.Wai(Request(..), Response, responseLBS)
-import Network.HTTP.Types.Status(status200)
+import Network.Wai(Request(..))
 import qualified Data.Map.Strict as Map
-import Control.Concurrent.MVar (newMVar, tryTakeMVar, tryPutMVar, MVar)
+import Control.Concurrent.MVar (tryTakeMVar, tryPutMVar)
 import Control.Lens
 import Data.Maybe(fromJust)
-import Control.Concurrent(forkIO,
-                          threadDelay)
+import Control.Concurrent(forkIO)
+
 
 -- ============================= AppState ============================
 type MapRef = STM.TVar (Map Text.Text Collection.Collection)
