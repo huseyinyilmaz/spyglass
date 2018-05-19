@@ -1,5 +1,4 @@
 module Middlewares where
-import qualified Data.ByteString.Char8 as C8
 import System.Remote.Monitoring
 import Network.Wai
 import Network.Wai.Metrics

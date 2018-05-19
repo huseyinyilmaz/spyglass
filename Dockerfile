@@ -3,7 +3,7 @@ FROM fpco/stack-build:lts-11.7 as builder
 RUN apt update; apt install build-essential
 # Add default configuration.
 RUN mkdir -p /etc/spyglass
-ADD config.yaml /etc/spyglass/config.yaml
+ADD configuration/config.yaml /etc/spyglass/config.yaml
 RUN mkdir /opt/build
 WORKDIR /opt/build
 ADD . .
@@ -19,7 +19,6 @@ RUN apt-get update && apt-get install -y \
   libgmp-dev
 COPY --from=builder /opt/build/.stack-work/install/x86_64-linux/lts-11.7/8.2.2/bin .
 # copy configuration
-RUN mkdir -p /etc/spyglass
 COPY configuration/config.yaml /etc/spyglas/config.yaml
 # COPY static /opt/spyglass/static
 # COPY config /opt/spyglass/config
