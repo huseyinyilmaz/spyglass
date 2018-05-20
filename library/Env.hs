@@ -27,7 +27,6 @@ data AuthUser = AuthUser {
 
 data Config = Config {
   port:: Int,
-  callbacks:: [Text.Text],
   gzipEnabled:: Bool,
   monitoringEnabled:: Bool,
   monitoringIP:: Text.Text,

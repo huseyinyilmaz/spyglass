@@ -26,7 +26,6 @@ searchDataText :: LB.ByteString
 config :: Config
 config = Config {
   port=8080,
-  callbacks=[],
   monitoringEnabled=False,
   monitoringIP="0.0.0.0",
   monitoringPort=8888,

@@ -11,11 +11,11 @@ loggingForDevelopment: True
 
 defaultResultLimit: 20
 
-users:
+users: []
   # - username: admin
   #   password: password
 
-endpoints:
+endpoints: []
   # - path: "value"
   #   url: "http://acme.com/api/v1/search/"
   #   timeout: 300 # timeout in seconds.
