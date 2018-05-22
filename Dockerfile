@@ -1,5 +1,5 @@
 #============================ build stage ============================
-FROM fpco/stack-build:lts-11.7 as builder
+FROM fpco/stack-build:lts-11.10 as builder
 RUN apt update; apt install build-essential
 # Add default configuration.
 RUN mkdir -p /etc/spyglass
@@ -9,7 +9,7 @@ WORKDIR /opt/build
 ADD . .
 RUN stack build --system-ghc
 #============================= run stage =============================
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 RUN mkdir -p /opt/spyglass
 ARG BINARY_PATH
 WORKDIR /opt/spyglass
