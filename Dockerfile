@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
   ca-certificates \
   build-essential \
   libgmp-dev
-COPY --from=builder /opt/build/.stack-work/install/x86_64-linux/lts-11.7/8.2.2/bin .
+COPY --from=builder /opt/build/.stack-work/install/x86_64-linux/lts-11.10/8.2.2/bin .
 # copy configuration
 COPY configuration/config.yaml /etc/spyglas/config.yaml
 # COPY static /opt/spyglass/static
