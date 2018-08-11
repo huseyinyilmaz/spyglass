@@ -34,6 +34,7 @@ Than create a config file on the same directory as default file and name it conf
 Lastly, run following command to build and run the image:
 
 ::
+
    # Build your image:
    $ docker build . --tag=samplespyglass
    # Run your image
