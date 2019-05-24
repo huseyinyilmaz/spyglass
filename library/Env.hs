@@ -18,14 +18,23 @@ import Control.Lens
 
 import Control.Monad.Except(
   ExceptT,
-  MonadError
+  MonadError,
+  throwError,
   )
 import Control.Monad.Reader(
   MonadReader,
   ReaderT(..)
   )
+import Control.Monad.IO.Class(liftIO)
+
 import Control.Monad.IO.Class(MonadIO)
-import qualified Control.Concurrent.STM as STM
+import Control.Concurrent.STM (
+  STM,
+  TVar,
+  modifyTVar
+  )
+
+
 import qualified Data.Map.Strict as Map
 
 
@@ -79,7 +88,7 @@ class HasConfig a where
 
 instance HasConfig Config where
   getConfig = id
-  getPort = lens _getPort (\c p -> c{ _port = p })
+  getPort = lens _port (\c p -> c{ _port = p })
   getGzipEnabled = lens _gzipEnabled (\c p -> c{ _gzipEnabled = p })
   getMonitoringEnabled = lens _monitoringEnabled (\ c p -> c{_monitoringEnabled = p})
   getMonitoringIP = lens _monitoringIP (\ c i -> c{_monitoringIP = i})
@@ -87,29 +96,77 @@ instance HasConfig Config where
   getLoggingEnabled = lens _loggingEnabled (\ c p -> c{_loggingEnabled = p})
   getLoggingForDevelopment = lens _loggingForDevelopment (\ c p -> c{_loggingForDevelopment = p})
   getDefaultResultLimit = lens _defaultResultLimit (\ c l -> c{_defaultResultLimit = l})
-  getUsers = lens _getUsers (\c us -> c{ _users = us })
-  getEndpoints = lens _getEndpoints (\c es -> c{ _endpoints = es })
+  getUsers = lens _users (\c us -> c{ _users = us })
+  getEndpoints = lens _endpoints (\c es -> c{ _endpoints = es })
 
 -- ============================= AppState ============================
 -- XXX you were here
-newtype MapRef = STM.TVar (Map.Map Text.Text Collection.Collection)
+data  MapRef = MapRef{
+  _mapRefVar :: TVar (Map.Map Text.Text Collection.Collection)
+  }
 
 class HasMapRef a where
-  getMapRef :: Lens' a MapRef
+  getMapRef  :: Lens' a MapRef
+  getMapRefVar :: Lens' a (TVar (Map.Map Text.Text Collection.Collection))
+
+  getMapRefVar = getMapRef . getMapRefVar
 
 instance HasMapRef MapRef where
   getMapRef = id
+  getMapRefVar = lens _mapRefVar (\ m v -> m{ _mapRefVar = v })
 
 data AppState = AppState {
   _mapRef::MapRef,
   _config::Config
 }
 
-instance HasConfig appState where
+instance HasConfig AppState where
   getConfig = lens _config (\ a c -> a{_config = c})
 
-instance HasMapRef appState where
+instance HasMapRef AppState where
   getMapRef = lens _mapRef (\ a m -> a{_mapRef = m})
+
+class AsConfigError a where
+  _configError :: Prism' a ConfigError
+  _configFileNotFoundError :: Prism' a String
+  _configFileNotParsableError :: Prism' a String
+
+  _configFileNotFoundError = _configError . _configFileNotFoundError
+  _configFileNotParsableError = _configError . _configFileNotParsableError
+
+
+data ConfigError = ConfigFileNotFoundError {_msg :: String} |
+                   ConfigFileNotParsableError {_msg :: String}
+
+instance AsConfigError ConfigError where
+  _configError = id
+  _configFileNotFoundError = prism' ConfigFileNotFoundError (\ case ConfigFileNotFoundError s -> Just s
+                                                                    _ -> Nothing)
+  _configFileNotParsableError = prism' ConfigFileNotParsableError (\ case ConfigFileNotParsableError s -> Just s
+                                                                          _ -> Nothing)
+
+
+data AppError = AppError |
+                AppConfigError { _appConfigError :: ConfigError}
+
+instance AsConfigError AppError where
+  _configError = prism' AppConfigError
+                       (\ case AppConfigError e -> Just e
+                               _                -> Nothing)
+
+newtype AppT m a = App
+  {
+    unAppT:: (ReaderT AppState (ExceptT AppError m)) a
+
+  } deriving
+  (
+    Functor,
+    Applicative,
+    Monad,
+    MonadReader AppState,
+    MonadError AppError,
+    MonadIO
+  )
 
 
 -- Make everything json serializable
@@ -127,22 +184,15 @@ instance Collection.ToCollection Endpoint where
       Just collection -> return collection
       Nothing -> error "Problem Reading endpoint quiting...."
 
-readConfig :: IO Config
+readConfig :: (MonadIO t, MonadError ConfigError t) => t Config
 readConfig = do
-  -- home <- getHomeDirectory
-  config <- B.readFile "/etc/spyglass/config.yaml"
-  case (Y.decode config):: Maybe Config of
-    Just c -> return c
-    Nothing -> error "Could parse /etc/spyglass/config.yaml!"
+  config <- liftIO $ B.readFile "/etc/spyglass/config.yaml"
+  case (Y.decodeEither config):: Either String Config of
+    Right c -> return c
+    Left err -> throwError $ review _configFileNotParsableError ("Could parse /etc/spyglass/config.yaml: " <> err)
 
--- =============================== AppM ==============================
-newtype AppM a
-    = AppM
-    { unAppM :: ReaderT AppState IO a
-    } deriving (Functor, Applicative, Monad, MonadIO, MonadReader AppState)
-
-updateCollection :: MapRef -> Text.Text -> Collection.Collection -> STM.STM ()
-updateCollection mr name collection= do
-  STM.modifyTVar mr update
+updateCollection :: (HasMapRef m) => m -> Text.Text -> Collection.Collection -> STM ()
+updateCollection mr name collection= modifyTVar tvar update
   where
+    tvar = view getMapRefVar mr
     update = Map.insert name collection
