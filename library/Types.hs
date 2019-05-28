@@ -9,7 +9,7 @@ import Data.Aeson
 import Common()
 
 newtype ItemContent = ItemContent {getItemContent:: Text.Text}
-  deriving (Show, Generic, Aeson.ToJSON, Aeson.FromJSON, Eq, Monoid, IsString)
+  deriving (Show, Generic, Aeson.ToJSON, Aeson.FromJSON, Eq, Semigroup, Monoid, IsString)
 
 instance Ord ItemContent where
   compare = (compare `on` (Text.length . getItemContent))

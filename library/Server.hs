@@ -32,6 +32,14 @@ getState config = do
       collection <- toCollection e
       putStrLn "Initialization complete."
       return $ Map.insert (Env.path e) collection map
+mainApp :: AppT IO ()
+mainApp = do
+  config <- Env.readConfig
+  liftIO $ putStrLn ("Server is listening at 0.0.0.0:" <> (show (port config)))
+  appState <- getState config
+  middlewares <- liftIO $ getMiddlewares config
+  liftIO $ run (port config) (middlewares (getApp appState))
+
 
 main :: IO ()
 main = do
