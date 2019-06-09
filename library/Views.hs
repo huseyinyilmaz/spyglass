@@ -20,28 +20,37 @@ import Control.Monad.Reader
 import Data.Monoid((<>))
 import Data.Aeson(encode, eitherDecode)
 import Text.Read(readMaybe)
-
+import Control.Lens
 import Collection(bodyToCollection, lookup)
 
 
 import Request(PostRequest(..))
 import Types(ItemContent(..))
 --import State(AppState(..), AppStateT)
-import State(AppState(..), AppM(..), getCollection)
-import Env(Config(..))
+import State(getCollection)
+import Env(
+  Config(..),
+  AppT,
+  HasConfig,
+  HasMapRef,
+  getDefaultResultLimit,
+  getMapRefVar
+  )
 
-root :: AppM Response
-root = do
-  AppState {_mapRef=mapRef} <- ask
-  m <- liftIO $ STM.readTVarIO mapRef
+root :: (HasMapRef c, MonadReader c m, MonadIO m) => Request -> m Response
+root _request = do
+  config <- ask
+  let mapRefVar = view getMapRefVar config
+  m <- liftIO $ STM.readTVarIO mapRefVar
   return (responseLBS status200 [] ("Collections:" <> (showByteString (Map.keys m))))
   where
     showByteString :: Show a => a -> LC8.ByteString
     showByteString =  LC8.pack . show
 
-getView :: Request -> AppM Response
+getView :: (HasConfig c, HasMapRef c, MonadReader c m, MonadIO m) => Request -> m Response
 getView request = do
-  AppState {_config=Config{ defaultResultLimit=defaultLimit }} <- ask
+  config <- ask
+  let defaultResultLimit = view getDefaultResultLimit config
   maybeCollection <- getCollection request
   case maybeCollection of
     Nothing -> return (responseLBS status404 [] "Collection Does Not Exist!")
@@ -57,13 +66,14 @@ getView request = do
                 maybeLimitBS <- Data.List.lookup "limit" (queryString request)
                 limitBS <- maybeLimitBS
                 (readMaybe . Text.unpack . decodeUtf8) limitBS
-              limit = fromMaybe defaultLimit maybeLimit
+              limit = fromMaybe defaultResultLimit maybeLimit
           return (responseLBS status200 [] (encode (take limit result)))
         Nothing -> return (responseLBS status404 [] "Not Found")
 
-postView :: Request -> AppM Response
+postView :: (HasMapRef c, HasConfig c, MonadReader c m, MonadIO m) => Request -> m Response
 postView request = do
-  AppState {_mapRef=mapRef} <- ask
+  config <- ask
+  let mapRef = view getMapRefVar config
   m <- liftIO $ STM.readTVarIO mapRef
   body <- liftIO $ strictRequestBody request
 
@@ -81,10 +91,8 @@ postView request = do
    where
      path = Utility.buildPath (pathInfo request)
 
-debugView :: Request -> ReaderT AppState IO Response
-debugView request = do
-  -- state <- ask
-  (lift . return) response
+debugView :: (HasConfig c, MonadReader c m) => Request -> m Response
+debugView request = return response
   where
     response :: Response
     response = responseLBS status200 [] ((LC8.pack . show) request)

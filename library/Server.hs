@@ -8,63 +8,86 @@ import qualified Data.Map.Strict as Map
 import Data.Monoid((<>))
 import Control.Monad(foldM)
 --import Types
-import Env(Config(..))
+import Env(
+  AppState(..),
+  AppT(..),
+  Config(..),
+  getEndpoints,
+  getPath,
+  getPort,
+  getConfig,
+  MapRef(..),
+  runAppT,
+  )
+
+import Config(
+  readConfig,
+  )
 import qualified Views as Views
 import qualified Env as Env
 import Middlewares
 import Utility
 import Collection(toCollection)
+import Control.Lens
+import Control.Monad.IO.Class(liftIO)
 
-import State(AppState(..), AppM(..))
 -- import Network.HTTP.Types.Status(status200)
 -- import qualified Data.ByteString.Lazy.Char8 as C8
 --import Control.Monad.Trans
-import Control.Monad.Reader (ReaderT, runReaderT)
+import Control.Monad.Reader (ReaderT, runReaderT, ask)
 
 getState :: Config -> IO AppState
 getState config = do
-  newMap <- foldM addEndpoint Map.empty (endpoints config)
+  newMap <- foldM addEndpoint Map.empty endpoints
   ref <- STM.newTVarIO newMap
-  return $ AppState ref config
+  let newMapRef = MapRef ref
+  return $ AppState newMapRef config
   where
+    endpoints = view getEndpoints config
     addEndpoint map e = do
       putStrLn ("Initializing " <> show e)
       collection <- toCollection e
       putStrLn "Initialization complete."
-      return $ Map.insert (Env.path e) collection map
+      let path = view getPath e
+      return $ Map.insert path collection map
+
+
 mainApp :: AppT IO ()
 mainApp = do
-  config <- Env.readConfig
-  liftIO $ putStrLn ("Server is listening at 0.0.0.0:" <> (show (port config)))
-  appState <- getState config
-  middlewares <- liftIO $ getMiddlewares config
-  liftIO $ run (port config) (middlewares (getApp appState))
+  appState <- ask
+  let config = view getConfig appState
+  let port = view getPort appState
+  liftIO $ putStrLn ("Server is listening at 0.0.0.0:" <> (show port))
+  middlewares <- getMiddlewares
+  liftIO $ run port (middlewares (getApp appState))
 
 
 main :: IO ()
 main = do
   putStrLn getTitle
-  config <- Env.readConfig
-  putStrLn ("Server is listening at 0.0.0.0:" <> (show (port config)))
-  appState <- getState config
-  middlewares <- getMiddlewares config
-  run (port config) (middlewares (getApp appState))
+  eitherConfig <- readConfig
+  case eitherConfig of
+    Left e -> error e
+    Right config -> do
+      appState <- getState config
+      runAppT appState mainApp
+
 
 getApp :: AppState -> Application
 --getApp :: AppState -> Application
-getApp config request respond = do
-  resp <- runReaderT response config
+getApp appState request respond = do
+  resp <- liftIO $ runAppT appState appT
   respond resp
   where
-    response :: ReaderT AppState IO Response
-    response = router request
+    appT :: AppT IO Response
+    appT = router request
 
-router :: Request -> ReaderT AppState IO Response
+router :: Request -> AppT IO Response
 router request = do
   case (rawPathInfo request, requestMethod request) of
-    ("/", "GET") -> unAppM $ Views.root
+    ("/", "GET") -> Views.root request
     ("/", _) -> return notAllowed
-    (_, "GET") -> unAppM $ Views.getView request
-    (_, "POST") -> unAppM $ Views.postView request
+    (_, "GET") -> Views.getView request
+    (_, "POST") -> Views.postView request
     _ -> return notAllowed
 --(respond $ responseLBS status200 [] ((C8.pack . show) request))

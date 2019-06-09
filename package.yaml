@@ -30,6 +30,7 @@ default-extensions:
   - OverloadedStrings
   - RankNTypes
   - MultiParamTypeClasses
+  - LambdaCase
 library:
   dependencies:
   - base

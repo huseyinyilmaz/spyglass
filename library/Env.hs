@@ -5,8 +5,6 @@ import GHC.Generics
 import Data.Aeson
 import Common()
 -- import qualified Data.List as L
-import qualified Data.Yaml as Y
-import qualified Data.ByteString as B
 import qualified Data.Text as Text
 -- import qualified Data.Text as T
 -- import System.Directory (getHomeDirectory)
@@ -19,13 +17,16 @@ import Control.Lens
 import Control.Monad.Except(
   ExceptT,
   MonadError,
-  throwError,
+  -- throwError,
+  runExceptT,
   )
 import Control.Monad.Reader(
   MonadReader,
-  ReaderT(..)
+  ReaderT(..),
+  runReaderT,
   )
-import Control.Monad.IO.Class(liftIO)
+
+-- import Control.Monad.IO.Class(liftIO)
 
 import Control.Monad.IO.Class(MonadIO)
 import Control.Concurrent.STM (
@@ -43,6 +44,15 @@ data Endpoint = Endpoint {
   _url :: Text.Text,
   _timeout :: Maybe Integer
   } deriving(Generic, Show, Eq)
+
+getPath :: Lens' Endpoint Text.Text
+getPath = lens _path (\e p -> e{ _path = p })
+
+getUrl :: Lens' Endpoint Text.Text
+getUrl = lens _url (\e u -> e{ _url = u })
+
+getTimeout :: Lens' Endpoint (Maybe Integer)
+getTimeout = lens _timeout (\e t -> e{ _timeout = t })
 
 data AuthUser = AuthUser {
   _username:: Text.Text,
@@ -100,14 +110,15 @@ instance HasConfig Config where
   getEndpoints = lens _endpoints (\c es -> c{ _endpoints = es })
 
 -- ============================= AppState ============================
--- XXX you were here
+type MapRefVar = TVar (Map.Map Text.Text Collection.Collection)
+
 data  MapRef = MapRef{
-  _mapRefVar :: TVar (Map.Map Text.Text Collection.Collection)
+  _mapRefVar :: MapRefVar
   }
 
 class HasMapRef a where
   getMapRef  :: Lens' a MapRef
-  getMapRefVar :: Lens' a (TVar (Map.Map Text.Text Collection.Collection))
+  getMapRefVar :: Lens' a MapRefVar
 
   getMapRefVar = getMapRef . getMapRefVar
 
@@ -137,6 +148,7 @@ class AsConfigError a where
 
 data ConfigError = ConfigFileNotFoundError {_msg :: String} |
                    ConfigFileNotParsableError {_msg :: String}
+                   deriving (Show)
 
 instance AsConfigError ConfigError where
   _configError = id
@@ -148,6 +160,7 @@ instance AsConfigError ConfigError where
 
 data AppError = AppError |
                 AppConfigError { _appConfigError :: ConfigError}
+                deriving (Show)
 
 instance AsConfigError AppError where
   _configError = prism' AppConfigError
@@ -169,6 +182,16 @@ newtype AppT m a = App
   )
 
 
+runAppT :: (Monad m) => AppState -> (AppT m a) -> m a
+runAppT appState app = do
+  let except = runReaderT reader appState
+  runResult <- runExceptT except
+  case runResult of
+    Left e -> error $ show e
+    Right a -> return a
+
+  where reader = unAppT app
+
 -- Make everything json serializable
 instance ToJSON Endpoint
 instance FromJSON Endpoint
@@ -183,13 +206,6 @@ instance Collection.ToCollection Endpoint where
     case maybeCollection of
       Just collection -> return collection
       Nothing -> error "Problem Reading endpoint quiting...."
-
-readConfig :: (MonadIO t, MonadError ConfigError t) => t Config
-readConfig = do
-  config <- liftIO $ B.readFile "/etc/spyglass/config.yaml"
-  case (Y.decodeEither config):: Either String Config of
-    Right c -> return c
-    Left err -> throwError $ review _configFileNotParsableError ("Could parse /etc/spyglass/config.yaml: " <> err)
 
 updateCollection :: (HasMapRef m) => m -> Text.Text -> Collection.Collection -> STM ()
 updateCollection mr name collection= modifyTVar tvar update
