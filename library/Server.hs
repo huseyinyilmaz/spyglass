@@ -90,4 +90,3 @@ router request = do
     (_, "GET") -> Views.getView request
     (_, "POST") -> Views.postView request
     _ -> return notAllowed
---(respond $ responseLBS status200 [] ((C8.pack . show) request))

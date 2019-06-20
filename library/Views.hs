@@ -28,11 +28,17 @@ import Request(PostRequest(..))
 import Types(ItemContent(..))
 --import State(AppState(..), AppStateT)
 import State(getCollection)
+import Control.Monad.Except(
+  MonadError,
+  throwError,
+  )
+
 import Env(
   Config(..),
   AppT,
   HasConfig,
   HasMapRef,
+  AsRuntimeError,
   getDefaultResultLimit,
   getMapRefVar
   )
@@ -47,7 +53,12 @@ root _request = do
     showByteString :: Show a => a -> LC8.ByteString
     showByteString =  LC8.pack . show
 
-getView :: (HasConfig c, HasMapRef c, MonadReader c m, MonadIO m) => Request -> m Response
+getView :: (AsRuntimeError e,
+            HasConfig c,
+            HasMapRef c,
+            MonadReader c m,
+            MonadError e m,
+            MonadIO m) => Request -> m Response
 getView request = do
   config <- ask
   let defaultResultLimit = view getDefaultResultLimit config

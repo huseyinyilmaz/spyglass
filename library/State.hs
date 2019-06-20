@@ -4,10 +4,22 @@ import qualified Data.Text as Text
 import qualified Collection
 import qualified Request
 import qualified Utility
+
+import Control.Monad.Except(
+  MonadError,
+  throwError,
+  )
+
 import Env(
   HasMapRef(..),
-  MapRefVar
+  MapRefVar,
+  AsRuntimeError,
+  RuntimeError(..),
+  _runtimeCollectionNotFoundError,
   )
+
+import Control.Lens
+
 import Control.Monad.Reader
 import Network.Wai(Request(..))
 import qualified Data.Map.Strict as Map
@@ -44,13 +56,18 @@ updateCollection mr name collection= STM.modifyTVar mr update
 
 
 -- Gets
-getCollection :: (HasMapRef c, MonadReader c m, MonadIO m) => Request -> m (Maybe Collection.Collection)
+getCollection :: (
+  AsRuntimeError e,
+  HasMapRef c,
+  MonadReader c m,
+  MonadError e m,
+  MonadIO m) => Request -> m (Maybe Collection.Collection)
 getCollection request = do
   config <- ask
   let mr = view getMapRefVar config
   m <- liftIO $ STM.readTVarIO mr
   case Map.lookup path m of
-    Nothing -> return Nothing
+    Nothing -> throwError $ review (_runtimeCollectionNotFoundError) "Collection does not exist"
     Just collection -> do
       expired <- liftIO $ Collection.isExpired collection
       if expired then do
@@ -68,7 +85,6 @@ getCollection request = do
                 -- TODO try to lift STM directly to monad IO.
                 -- threadDelay (1000 * 1000 * 10)
                 STM.atomically (updateCollection mr path newCollection)
-                putStrLn "Updated Collection"
                 return Nothing
               Nothing -> do
                 putStrLn "Could not get collection"

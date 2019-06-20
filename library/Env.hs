@@ -158,7 +158,22 @@ instance AsConfigError ConfigError where
                                                                           _ -> Nothing)
 
 
-data AppError = AppError |
+class AsRuntimeError a where
+  _runtimeError :: Prism' a RuntimeError
+  _runtimeCollectionNotFoundError :: Prism' a String
+
+  _runtimeCollectionNotFoundError = _runtimeError . _runtimeCollectionNotFoundError
+
+data RuntimeError = RuntimeCollectionNotFoundError {_msg :: String}
+                    deriving (Show)
+
+instance AsRuntimeError RuntimeError where
+  _runtimeError = id
+
+  _runtimeCollectionNotFoundError = prism' RuntimeCollectionNotFoundError (\ case RuntimeCollectionNotFoundError s -> Just s
+                                                                                  _ -> Nothing)
+
+data AppError = AppRuntimeError { _appRuntimeError :: RuntimeError } |
                 AppConfigError { _appConfigError :: ConfigError}
                 deriving (Show)
 
