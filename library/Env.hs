@@ -1,17 +1,12 @@
 module Env where
--- import Data.Text(Text)
--- import qualified Turtle as Turtle
 import GHC.Generics
 import Data.Aeson
 import Common()
--- import qualified Data.List as L
 import qualified Data.Text as Text
--- import qualified Data.Text as T
--- import System.Directory (getHomeDirectory)
--- import Data.Monoid((<>))
--- import Types
 import qualified Collection
 
+import Network.HTTP.Types.Status(status500)
+import Network.Wai
 import Control.Lens
 
 import Control.Monad.Except(
@@ -26,7 +21,7 @@ import Control.Monad.Reader(
   runReaderT,
   )
 
--- import Control.Monad.IO.Class(liftIO)
+import qualified Data.ByteString.Lazy.Char8 as LC8
 
 import Control.Monad.IO.Class(MonadIO)
 import Control.Concurrent.STM (
@@ -35,9 +30,7 @@ import Control.Concurrent.STM (
   modifyTVar
   )
 
-
 import qualified Data.Map.Strict as Map
-
 
 data Endpoint = Endpoint {
   _path :: Text.Text,
@@ -182,6 +175,12 @@ instance AsConfigError AppError where
                        (\ case AppConfigError e -> Just e
                                _                -> Nothing)
 
+instance AsRuntimeError AppError where
+  _runtimeError = prism' AppRuntimeError
+                       (\ case AppRuntimeError e -> Just e
+                               _                -> Nothing)
+
+
 newtype AppT m a = App
   {
     unAppT:: (ReaderT AppState (ExceptT AppError m)) a
@@ -197,12 +196,12 @@ newtype AppT m a = App
   )
 
 
-runAppT :: (Monad m) => AppState -> (AppT m a) -> m a
+runAppT :: (Monad m) => AppState -> (AppT m Response) -> m Response
 runAppT appState app = do
   let except = runReaderT reader appState
   runResult <- runExceptT except
   case runResult of
-    Left e -> error $ show e
+    Left e -> return (responseLBS status500 [] (LC8.pack $ show e))
     Right a -> return a
 
   where reader = unAppT app

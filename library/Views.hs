@@ -22,20 +22,14 @@ import Data.Aeson(encode, eitherDecode)
 import Text.Read(readMaybe)
 import Control.Lens
 import Collection(bodyToCollection, lookup)
-
-
 import Request(PostRequest(..))
 import Types(ItemContent(..))
---import State(AppState(..), AppStateT)
 import State(getCollection)
 import Control.Monad.Except(
   MonadError,
-  throwError,
   )
 
 import Env(
-  Config(..),
-  AppT,
   HasConfig,
   HasMapRef,
   AsRuntimeError,

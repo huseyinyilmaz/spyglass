@@ -74,7 +74,6 @@ main = do
 
 
 getApp :: AppState -> Application
---getApp :: AppState -> Application
 getApp appState request respond = do
   resp <- liftIO $ runAppT appState appT
   respond resp
