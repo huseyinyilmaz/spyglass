@@ -52,7 +52,7 @@ getState config = do
       return $ Map.insert path collection map
 
 
-mainApp :: AppT IO ()
+mainApp :: AppT IO Application
 mainApp = do
   appState <- ask
   let config = view getConfig appState
@@ -60,6 +60,9 @@ mainApp = do
   liftIO $ putStrLn ("Server is listening at 0.0.0.0:" <> (show port))
   middlewares <- getMiddlewares
   liftIO $ run port (middlewares (getApp appState))
+  where
+    appT :: AppT IO Response
+    appT = router request
 
 
 main :: IO ()
@@ -70,7 +73,10 @@ main = do
     Left e -> error e
     Right config -> do
       appState <- getState config
-      runAppT appState mainApp
+      let port = view getPort appState
+      app <- runAppT appState mainApp
+      run port app
+
 
 
 getApp :: AppState -> Application
