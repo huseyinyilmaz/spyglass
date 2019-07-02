@@ -18,6 +18,7 @@ import Env(
   getConfig,
   MapRef(..),
   runAppT,
+  runAppWithStateOnlyT,
   )
 
 import Config(
@@ -52,19 +53,6 @@ getState config = do
       return $ Map.insert path collection map
 
 
-mainApp :: AppT IO Application
-mainApp = do
-  appState <- ask
-  let config = view getConfig appState
-  let port = view getPort appState
-  liftIO $ putStrLn ("Server is listening at 0.0.0.0:" <> (show port))
-  middlewares <- getMiddlewares
-  liftIO $ run port (middlewares (getApp appState))
-  where
-    appT :: AppT IO Response
-    appT = router request
-
-
 main :: IO ()
 main = do
   putStrLn getTitle
@@ -73,19 +61,18 @@ main = do
     Left e -> error e
     Right config -> do
       appState <- getState config
+      middlewares <- (runAppWithStateOnlyT appState getMiddlewares):: IO Middleware
       let port = view getPort appState
-      app <- runAppT appState mainApp
-      run port app
+      let app request respond = runAppT appState respond (getApp request respond)
+      putStrLn ("Server is listening at 0.0.0.0:" <> (show port))
+      run port $ middlewares app
 
 
 
-getApp :: AppState -> Application
-getApp appState request respond = do
-  resp <- liftIO $ runAppT appState appT
-  respond resp
-  where
-    appT :: AppT IO Response
-    appT = router request
+getApp :: Request -> (Response -> IO ResponseReceived) -> AppT IO ResponseReceived
+getApp request respond = do
+  resp <- router request
+  liftIO $ respond resp
 
 router :: Request -> AppT IO Response
 router request = do

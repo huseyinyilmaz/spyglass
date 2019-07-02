@@ -5,7 +5,10 @@ import Common()
 import qualified Data.Text as Text
 import qualified Collection
 
-import Network.HTTP.Types.Status(status500)
+import Network.HTTP.Types.Status(
+  status500,
+  status404
+  )
 import Network.Wai
 import Control.Lens
 
@@ -181,6 +184,19 @@ instance AsRuntimeError AppError where
                                _                -> Nothing)
 
 
+newtype AppWithStateOnlyT m a = AppWithStateOnly
+  {
+    unAppWithStateOnlyT:: (ReaderT AppState m) a
+
+  } deriving
+  (
+    Functor,
+    Applicative,
+    Monad,
+    MonadReader AppState,
+    MonadIO
+  )
+
 newtype AppT m a = App
   {
     unAppT:: (ReaderT AppState (ExceptT AppError m)) a
@@ -196,14 +212,19 @@ newtype AppT m a = App
   )
 
 
-runAppT :: (Monad m) => AppState -> (AppT m Response) -> m Response
-runAppT appState app = do
+runAppWithStateOnlyT :: (Monad m) => AppState -> (AppWithStateOnlyT m a) -> m a
+runAppWithStateOnlyT appState app = do
+  runReaderT reader appState
+  where reader = unAppWithStateOnlyT app
+
+runAppT :: AppState -> (Response -> IO ResponseReceived) -> (AppT IO ResponseReceived) -> IO ResponseReceived
+runAppT appState respond app = do
   let except = runReaderT reader appState
   runResult <- runExceptT except
   case runResult of
-    Left e -> return (responseLBS status500 [] (LC8.pack $ show e))
+    Left (AppRuntimeError (RuntimeCollectionNotFoundError s)) -> respond (responseLBS status404 [] (LC8.pack $ s))
+    Left e -> respond (responseLBS status500 [] (LC8.pack $ show e))
     Right a -> return a
-
   where reader = unAppT app
 
 -- Make everything json serializable
