@@ -6,7 +6,11 @@ import Test.Hspec.Wai
 import Network.Wai
 import qualified Network.Wai.Test as WT
 import Server(getApp, getState)
-import Env(Config(..), AuthUser(..))
+import Env(Config(..),
+           AuthUser(..),
+           runAppWithStateOnlyT,
+           runAppT,
+          )
 --import Collection(Endpoint(..), Collection(..))
 import Request(PostRequest(..), Term(..), IndexType(..))
 import Middlewares
@@ -29,23 +33,24 @@ searchData = PostDataRequest {
 
 config :: Config
 config = Config {
-  port=8080,
-  monitoringEnabled=False,
-  monitoringIP="0.0.0.0",
-  monitoringPort=8888,
-  loggingEnabled=False,
-  loggingForDevelopment=False,
-  gzipEnabled=False,
-  defaultResultLimit=20,
-  users=[AuthUser {username="test", password="test"}],
-  endpoints=[]
+  _port=8080,
+  _monitoringEnabled=False,
+  _monitoringIP="0.0.0.0",
+  _monitoringPort=8888,
+  _loggingEnabled=False,
+  _loggingForDevelopment=False,
+  _gzipEnabled=False,
+  _defaultResultLimit=20,
+  _users=[AuthUser {_username="test", _password="test"}],
+  _endpoints=[]
   }
 
 app :: IO Application
 app = do
   appState <- getState config
-  middlewares <- getMiddlewares config
-  return (middlewares (getApp appState))
+  middlewares <- (runAppWithStateOnlyT appState getMiddlewares):: IO Middleware
+  let testApp req respond = runAppT appState respond (getApp req respond)
+  return $ middlewares testApp
 
 postWithAuth :: B.ByteString -> BL.ByteString -> WaiSession WT.SResponse
 postWithAuth path body = request "POST" path

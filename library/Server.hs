@@ -15,7 +15,7 @@ import Env(
   getEndpoints,
   getPath,
   getPort,
-  getConfig,
+  -- getConfig,
   MapRef(..),
   runAppT,
   runAppWithStateOnlyT,
@@ -25,7 +25,7 @@ import Config(
   readConfig,
   )
 import qualified Views as Views
-import qualified Env as Env
+-- import qualified Env as Env
 import Middlewares
 import Utility
 import Collection(toCollection)
@@ -35,7 +35,7 @@ import Control.Monad.IO.Class(liftIO)
 -- import Network.HTTP.Types.Status(status200)
 -- import qualified Data.ByteString.Lazy.Char8 as C8
 --import Control.Monad.Trans
-import Control.Monad.Reader (ReaderT, runReaderT, ask)
+-- import Control.Monad.Reader (ReaderT, runReaderT, ask)
 
 getState :: Config -> IO AppState
 getState config = do

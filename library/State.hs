@@ -67,7 +67,7 @@ getCollection request = do
   let mr = view getMapRefVar config
   m <- liftIO $ STM.readTVarIO mr
   case Map.lookup path m of
-    Nothing -> throwError $ review (_runtimeCollectionNotFoundError) "Collection does not exist"
+    Nothing -> throwError $ review (_runtimeCollectionNotFoundError) "Collection Does Not Exist!"
     Just collection -> do
       expired <- liftIO $ Collection.isExpired collection
       if expired then do
