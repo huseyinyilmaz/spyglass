@@ -2,7 +2,7 @@
 # Cabal file when you run `stack build`. See the hpack website for help with
 # this file: <https://github.com/sol/hpack>.
 name: spyglass
-version: '1.1.0'
+version: '1.2.0'
 github: "huseyinyilmaz/spyglass"
 license: MIT
 author: "Huseyin Yilmaz"
