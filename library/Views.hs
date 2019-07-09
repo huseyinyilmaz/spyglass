@@ -12,7 +12,7 @@ import Utility(noContent, errorResponse)
 import qualified Data.List
 import qualified Utility
 import Data.Maybe (fromMaybe)
-import Network.HTTP.Types.Status(status200, status404)
+import Network.HTTP.Types.Status(status200)
 import qualified Data.ByteString.Lazy.Char8 as LC8
 import Network.Wai
 import Control.Monad(join)
@@ -27,14 +27,17 @@ import Types(ItemContent(..))
 import State(getCollection)
 import Control.Monad.Except(
   MonadError,
+  throwError,
   )
 
 import Env(
   HasConfig,
   HasMapRef,
   AsRuntimeError,
+  -- RuntimeError(..),
   getDefaultResultLimit,
-  getMapRefVar
+  getMapRefVar,
+  _runtimeCollectionNotFoundError,
   )
 
 root :: (HasMapRef c, MonadReader c m, MonadIO m) => Request -> m Response
@@ -56,24 +59,21 @@ getView :: (AsRuntimeError e,
 getView request = do
   config <- ask
   let defaultResultLimit = view getDefaultResultLimit config
-  maybeCollection <- getCollection request
-  case maybeCollection of
-    Nothing -> return (responseLBS status404 [] "Collection Does Not Exist!")
-    Just c -> do
-      let maybeResult :: Maybe [ItemContent]
-          maybeResult = do
-            query <- join $ Data.List.lookup "query" (queryString request)
-            return $ Collection.lookup query c
-      case maybeResult of
-        Just result -> do
-          let maybeLimit :: Maybe Int
-              maybeLimit = do
-                maybeLimitBS <- Data.List.lookup "limit" (queryString request)
-                limitBS <- maybeLimitBS
-                (readMaybe . Text.unpack . decodeUtf8) limitBS
-              limit = fromMaybe defaultResultLimit maybeLimit
-          return (responseLBS status200 [] (encode (take limit result)))
-        Nothing -> return (responseLBS status404 [] "Not Found")
+  c <- getCollection request
+  let maybeResult :: Maybe [ItemContent]
+      maybeResult = do
+        query <- join $ Data.List.lookup "query" (queryString request)
+        return $ Collection.lookup query c
+  case maybeResult of
+    Just result -> do
+      let maybeLimit :: Maybe Int
+          maybeLimit = do
+            maybeLimitBS <- Data.List.lookup "limit" (queryString request)
+            limitBS <- maybeLimitBS
+            (readMaybe . Text.unpack . decodeUtf8) limitBS
+          limit = fromMaybe defaultResultLimit maybeLimit
+      return (responseLBS status200 [] (encode (take limit result)))
+    Nothing -> throwError $ review (_runtimeCollectionNotFoundError) ()
 
 postView :: (HasMapRef c, HasConfig c, MonadReader c m, MonadIO m) => Request -> m Response
 postView request = do

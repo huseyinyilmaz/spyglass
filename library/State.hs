@@ -14,7 +14,7 @@ import Env(
   HasMapRef(..),
   MapRefVar,
   AsRuntimeError,
-  RuntimeError(..),
+  -- RuntimeError(..),
   _runtimeCollectionNotFoundError,
   )
 
@@ -24,7 +24,7 @@ import Control.Monad.Reader
 import Network.Wai(Request(..))
 import qualified Data.Map.Strict as Map
 import Control.Concurrent.MVar (tryTakeMVar, tryPutMVar)
-import Control.Lens
+-- import Control.Lens()
 import Data.Maybe(fromJust)
 import Control.Concurrent(forkIO)
 
@@ -61,13 +61,13 @@ getCollection :: (
   HasMapRef c,
   MonadReader c m,
   MonadError e m,
-  MonadIO m) => Request -> m (Maybe Collection.Collection)
+  MonadIO m) => Request -> m Collection.Collection
 getCollection request = do
   config <- ask
   let mr = view getMapRefVar config
   m <- liftIO $ STM.readTVarIO mr
   case Map.lookup path m of
-    Nothing -> throwError $ review (_runtimeCollectionNotFoundError) "Collection Does Not Exist!"
+    Nothing -> throwError $ review (_runtimeCollectionNotFoundError) ()
     Just collection -> do
       expired <- liftIO $ Collection.isExpired collection
       if expired then do
@@ -93,10 +93,10 @@ getCollection request = do
             case maybeLock of
               Just () -> return ()
               Nothing -> error "Lock assertion failed!"
-          return $ Just collection
+          return collection
         else
-          return $ Just collection
+          return collection
       else
-        return $ Just collection
+        return collection
   where
     path = Utility.buildPath (pathInfo request)

@@ -156,18 +156,25 @@ instance AsConfigError ConfigError where
 
 class AsRuntimeError a where
   _runtimeError :: Prism' a RuntimeError
-  _runtimeCollectionNotFoundError :: Prism' a String
+  _runtimeCollectionNotFoundError :: Prism' a ()
+  _runtimeCouldNotGetCollectionEndpointError :: Prism' a ()
 
   _runtimeCollectionNotFoundError = _runtimeError . _runtimeCollectionNotFoundError
+  _runtimeCouldNotGetCollectionEndpointError = _runtimeError . _runtimeCouldNotGetCollectionEndpointError
 
-data RuntimeError = RuntimeCollectionNotFoundError {_msg :: String}
+data RuntimeError = RuntimeCollectionNotFoundError |
+                    RuntimeCouldNotGetCollectionEndpoint
                     deriving (Show)
 
 instance AsRuntimeError RuntimeError where
   _runtimeError = id
 
-  _runtimeCollectionNotFoundError = prism' RuntimeCollectionNotFoundError (\ case RuntimeCollectionNotFoundError s -> Just s
-                                                                                  _ -> Nothing)
+  _runtimeCollectionNotFoundError = prism' (const RuntimeCollectionNotFoundError) (\ case RuntimeCollectionNotFoundError -> Just ()
+                                                                                          _ -> Nothing)
+
+  _runtimeCouldNotGetCollectionEndpointError = prism' (const RuntimeCouldNotGetCollectionEndpoint) (\ case RuntimeCouldNotGetCollectionEndpoint -> Just ()
+                                                                                                           _ -> Nothing)
+
 
 data AppError = AppRuntimeError { _appRuntimeError :: RuntimeError } |
                 AppConfigError { _appConfigError :: ConfigError}
@@ -222,7 +229,8 @@ runAppT appState respond app = do
   let except = runReaderT reader appState
   runResult <- runExceptT except
   case runResult of
-    Left (AppRuntimeError (RuntimeCollectionNotFoundError s)) -> respond (responseLBS status404 [] (LC8.pack $ s))
+    Left (AppRuntimeError RuntimeCollectionNotFoundError) -> respond (responseLBS status404 [] "Collection Does Not Exist!")
+    Left (AppRuntimeError RuntimeCouldNotGetCollectionEndpoint) -> respond (responseLBS status500 [] "Could Not Retreive Data From Endpoint!")
     Left e -> respond (responseLBS status500 [] (LC8.pack $ show e))
     Right a -> return a
   where reader = unAppT app
