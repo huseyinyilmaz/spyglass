@@ -1,5 +1,5 @@
 #============================ build stage ============================
-FROM fpco/stack-build:lts-11.10 as builder
+FROM fpco/stack-build:lts-13.22 as builder
 RUN apt update; apt install build-essential
 # Add default configuration.
 RUN mkdir -p /etc/spyglass
